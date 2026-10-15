@@ -1,0 +1,167 @@
+{
+  "key": "sales-invoice-financing-sample",
+  "version": 1,
+  "name": "Invoice financing — document review",
+  "notice": "Requirements for reviewing invoice accuracy, delivery evidence and supporting documents before financing assessment.",
+  "product": "sales_invoice_financing",
+  "currency": "SGD",
+  "supported_layout": "CPL-1",
+  "supported_contract": "English text PDF in layout CPL-1; one invoice line in SGD; matching quantity units; no tax or other charges.",
+  "requirements": [
+    {
+      "key": "invoice_total",
+      "label": "Invoice total agrees with quantity \u00d7 unit price",
+      "description": "The active invoice states one SGD line with no tax or charges, and quantity \u00d7 unit price equals the stated total (decimal arithmetic, 2 dp).",
+      "depends_on_roles": [
+        "invoice"
+      ]
+    },
+    {
+      "key": "delivery_receipts",
+      "label": "Delivery receipts cover the full invoiced quantity",
+      "description": "Distinct delivery events from a permitted receipt source, referencing the invoice with matching goods and units, add up to the invoiced quantity. Copies count once; dispatch is not receipt.",
+      "depends_on_roles": [
+        "invoice",
+        "delivery_receipt"
+      ]
+    }
+  ],
+  "source_roles": {
+    "invoice": {
+      "label": "Commercial invoice",
+      "permitted_issuer": "seller"
+    },
+    "delivery_receipt": {
+      "label": "Delivery receipt",
+      "permitted_issuer": "case_receipt_issuers"
+    },
+    "written_message": {
+      "label": "Written message",
+      "requires_human_disposition": true
+    },
+    "status_update": {
+      "label": "Structured status update",
+      "requires_human_disposition": false
+    }
+  },
+  "replacement_rules": {
+    "invoice": {
+      "requires_explicit_supersession": true,
+      "same_issuer": true,
+      "may_change": [
+        "total_amount",
+        "issue_date"
+      ]
+    },
+    "delivery_receipt": {
+      "requires_explicit_supersession": true,
+      "same_issuer": true,
+      "may_change": [
+        "quantity",
+        "received_at",
+        "condition"
+      ]
+    }
+  },
+  "templates": {
+    "missing_receipt": {
+      "label": "Missing delivery receipt",
+      "requirement": "delivery_receipts",
+      "text": "Please provide delivery receipt evidence for the remaining {outstanding_quantity} {unit} of {item} under invoice {invoice_number}. Each receipt must come from {receipt_issuers}, reference {invoice_number} and identify a delivery that is distinct from {known_deliveries}. A dispatch notice does not confirm receipt."
+    },
+    "invoice_correction": {
+      "label": "Invoice correction",
+      "requirement": "invoice_total",
+      "text": "Invoice {invoice_number} states a total of {stated_total}, but {quantity} {unit} \u00d7 {unit_price} = {expected_total}. Please provide a replacement invoice issued by {seller_name} that explicitly replaces version {invoice_version}, or explain the difference."
+    },
+    "invoice_replacement_clarification": {
+      "label": "Replacement invoice clarification",
+      "requirement": "invoice_total",
+      "text": "The replacement invoice received for {invoice_number} could not be accepted: {rejection}. Please provide a replacement issued by {seller_name} that explicitly replaces version {invoice_version} and changes only the corrected amount."
+    },
+    "receipt_correction": {
+      "label": "Receipt correction (authorised by reviewer)",
+      "requirement": "delivery_receipts",
+      "text": "A statement received on this case disputes receipt {receipt_number}. Please provide a corrected receipt from {receipt_issuers} that explicitly replaces {receipt_number} version {receipt_version} and states the quantity received for delivery {delivery_ref}, plus separate receipt evidence for any remaining {unit} of {item} under {invoice_number}."
+    },
+    "supported_document": {
+      "label": "Supported document format",
+      "requirement": null,
+      "text": "Document {document_label} could not be processed ({rejection}). Please provide the document as a text PDF in the supported layout, with one SGD invoice line and no tax or other charges."
+    },
+    "receipt_basis_clarification": {
+      "label": "Receipt basis clarification",
+      "requirement": "delivery_receipts",
+      "text": "Receipt {receipt_label} for {invoice_number} states a cumulative quantity or conflicts with another receipt for the same delivery. Please provide a corrected receipt from {receipt_issuers} that explicitly replaces it and states only the quantity received in that delivery, so each delivery is counted once."
+    }
+  },
+  "task_decisions": {
+    "message_review": [
+      "record_interpretation",
+      "mark_irrelevant",
+      "retain_dispute_request_evidence",
+      "keep_on_hold"
+    ],
+    "dispute": [
+      "retain_dispute_request_evidence",
+      "record_interpretation",
+      "keep_on_hold"
+    ],
+    "evidence_problem": [
+      "retain_dispute_request_evidence",
+      "authorise_request",
+      "keep_on_hold"
+    ],
+    "no_response": [
+      "authorise_extra_round",
+      "keep_on_hold"
+    ],
+    "service_failure": [
+      "resume_automation",
+      "keep_on_hold"
+    ],
+    "budget_exhausted": [
+      "grant_extension",
+      "keep_on_hold"
+    ]
+  },
+  "timers": {
+    "reminder_after_hours": 48,
+    "stop_after_reminder_hours": 72
+  },
+  "limits": {
+    "model_calls_per_invocation": 6,
+    "tool_calls_per_invocation": 16,
+    "active_seconds_per_invocation": 60,
+    "transient_retries": 2,
+    "automatic_wakeups_per_case": 12,
+    "request_rounds": 2,
+    "reminders_per_request": 1,
+    "case_budget_usd": "0.50",
+    "environment_daily_budget_usd": "20.00",
+    "max_sources_per_case": 20,
+    "max_pages_per_document": 20,
+    "max_bytes_per_original": 10485760
+  },
+  "authority": {
+    "agent_may": [
+      "read_case",
+      "inspect_source",
+      "compare_statements",
+      "run_checks",
+      "prepare_request",
+      "issue_request",
+      "wait_for_event",
+      "open_human_task",
+      "try_complete"
+    ],
+    "agent_may_not": [
+      "approve_financing",
+      "amend_application",
+      "make_payment",
+      "change_policy",
+      "change_recipient",
+      "access_other_case"
+    ]
+  }
+}

@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Scenario library · CaseProof</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #f4f7f5;
+        color: #18333d;
+        font:
+          15px/1.6 system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      main {
+        max-width: 1140px;
+        margin: auto;
+        padding: 32px 24px 60px;
+      }
+      a {
+        color: #00675f;
+        text-underline-offset: 3px;
+      }
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid #956200;
+        outline-offset: 4px;
+      }
+      header {
+        max-width: 810px;
+        margin: 32px 0;
+      }
+      h1 {
+        font-size: clamp(30px, 5vw, 44px);
+        line-height: 1.12;
+        letter-spacing: -0.035em;
+        margin: 12px 0 18px;
+      }
+      h2 {
+        font-size: 20px;
+        line-height: 1.3;
+        margin: 8px 0 12px;
+      }
+      p {
+        margin: 8px 0 16px;
+      }
+      .kicker {
+        color: #00675f;
+        letter-spacing: 0.08em;
+        font-size: 11px;
+        font-weight: 750;
+      }
+      .buttons,
+      .filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 20px 0;
+      }
+      .button,
+      button {
+        display: inline-block;
+        border-radius: 10px;
+        background: #00675f;
+        color: white;
+        font: 600 14px/1.4 system-ui;
+        text-decoration: none;
+        padding: 10px 15px;
+        border: 1px solid #00675f;
+        cursor: pointer;
+      }
+      .secondary,
+      button[aria-pressed="false"] {
+        background: white;
+        color: #00675f;
+      }
+      .quick {
+        background: #e6f4ef;
+        border: 1px solid #cceae2;
+        border-radius: 14px;
+        padding: 18px 24px;
+        margin-bottom: 24px;
+      }
+      .quick summary {
+        font-size: 16px;
+      }
+      .quick li {
+        margin: 8px 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+        align-items: start;
+      }
+      article {
+        min-width: 0;
+        background: white;
+        border: 1px solid #d8e2e0;
+        border-radius: 16px;
+        padding: 24px;
+        scroll-margin-top: 20px;
+      }
+      article[hidden] {
+        display: none;
+      }
+      .parties {
+        font-size: 12px;
+        color: #52656c;
+        overflow-wrap: anywhere;
+      }
+      .expect {
+        background: #f4f7f5;
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 13px;
+        margin: 18px 0;
+      }
+      .expect p {
+        margin: 4px 0 10px;
+        overflow-wrap: anywhere;
+      }
+      .expect p:last-child {
+        margin-bottom: 0;
+      }
+      details {
+        border-top: 1px solid #e8eeec;
+        margin-top: 18px;
+        padding-top: 14px;
+        font-size: 13px;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 650;
+        color: #00675f;
+      }
+      details li {
+        margin: 10px 0;
+        overflow-wrap: anywhere;
+      }
+      details ul,
+      details ol {
+        padding-left: 20px;
+      }
+      details span {
+        color: #61717a;
+        font-size: 12px;
+      }
+      input {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #bacdc8;
+        border-radius: 10px;
+        background: white;
+        font: inherit;
+        margin-top: 6px;
+      }
+      footer {
+        margin-top: 32px;
+        color: #61717a;
+        font-size: 12px;
+      }
+      #count {
+        font-size: 13px;
+        color: #61717a;
+      }
+      @media (max-width: 720px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        main {
+          padding: 24px 16px;
+        }
+        article {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a href="/queue">← Back to CaseProof</a>
+      <header>
+        <div class="kicker">MANUAL SCENARIO LIBRARY</div>
+        <h1>Every flow has a case to try.</h1>
+        <p>
+          21
+          scenarios with fictional business documents, named participants, exact
+          actions and expected results. Start with a clean review, then explore
+          exceptions and recovery.
+        </p>
+        <div class="buttons">
+          <a class="button" href="caseproof-manual-scenarios.zip" download
+            >Download all scenarios</a
+          ><a
+            class="button secondary"
+            href="START-HERE.pdf"
+            target="_blank"
+            rel="noopener"
+            >Open testing guide</a
+          >
+        </div>
+      </header>
+      <details class="quick">
+        <summary>How to use these documents</summary>
+        <ol>
+          <li>Sign in as Alex Chen. Start a NEW case for each scenario and use only that folder&#x27;s files.</li><li>One case is one sale. The seller issues the invoice; the buyer or a permitted logistics provider confirms receipt. Different letterheads do not mean different sales.</li><li>Most scenarios use Your documents. Scenarios 17, 20 and 21 use the named Demo scenario so the clock, withdrawal and structured-response controls are available.</li><li>Upload only the Start with files. Keep reference templates in the optional reference fields. Leave Written message blank unless the instructions provide wording.</li><li>Wait for each agent run to settle. For a correction, select the exact earlier source under Replacing an earlier document?. For another delivery, select No - adding new evidence.</li><li>Use the sample policy unless a scenario explicitly requires a published change. A case can correctly finish on hold or remain open when evidence is unsafe or unsupported. Document review never approves financing.</li>
+        </ol>
+      </details>
+      <label for="search"
+        >Find a flow<input
+          id="search"
+          type="search"
+          placeholder="Search invoices, reminders, tampering…"
+      /></label>
+      <div class="filters" role="group" aria-label="Scenario category">
+        <button type="button" data-filter="all" aria-pressed="true">
+          All scenarios</button
+        ><button type="button" data-filter="Document checks" aria-pressed="false">Document checks</button><button type="button" data-filter="Human review" aria-pressed="false">Human review</button><button type="button" data-filter="Document appearance" aria-pressed="false">Document appearance</button><button type="button" data-filter="Follow-up and recovery" aria-pressed="false">Follow-up and recovery</button>
+      </div>
+      <p id="count" role="status">
+        21
+        scenarios
+      </p>
+      <section class="grid"><article id="01-clean-case" data-group="Document checks">
+  <div class="kicker">01 · Document checks</div>
+  <h2>Everything agrees</h2>
+  <p>A correct invoice and full proof of delivery.</p>
+  <p class="parties">Seabrook Packaging Pte Ltd → Elmwood Retail Pte Ltd<br>
+    Invoice SP-2026-1101</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-full-receipt.pdf</p>
+    <strong>Expected first result</strong><p>Invoice total: 120 x SGD 18.50 = SGD 2,220.00. Delivery: 120 of 120 cartons received. Both checks should pass.</p>
+  </div>
+  <a class="button secondary" href="01-clean-case.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <ol><li>Create a new case with 01 as the Invoice PDF and 02 as a Delivery receipt PDF. Leave Written message blank.</li><li>Wait for the agent to finish. Open Review summary when the case says Review complete.</li></ol>
+    <p><strong>Expected final result</strong><br>Review complete, with both checklist questions resolved. This completes document review; it does not approve financing.</p>
+    <ul><li><a href="01-clean-case/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="01-clean-case/02-full-receipt.pdf" download>02-full-receipt.pdf</a> <span>receipt</span></li></ul>
+    <a href="01-clean-case/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="02-invoice-correction" data-group="Document checks">
+  <div class="kicker">02 · Document checks</div>
+  <h2>The invoice total is wrong</h2>
+  <p>Fix the amount while retaining the original invoice in history.</p>
+  <p class="parties">Meridian Office Supply Pte Ltd → Juniper Business Centre Pte Ltd<br>
+    Invoice MO-2026-2201</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice-incorrect.pdf, 02-full-receipt.pdf</p>
+    <strong>Expected first result</strong><p>Delivery is complete. The invoice states SGD 2,680.00, but 80 x SGD 32.50 = SGD 2,600.00. Expect a request for an invoice correction.</p>
+  </div>
+  <a class="button secondary" href="02-invoice-correction.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <ol><li>Start with 01 as the invoice and 02 as the receipt. Leave Written message blank.</li><li>After the correction request appears, choose Add documents or reply. Put 03 in Invoice PDF.</li><li>Under Replacing an earlier document?, select Invoice MO-2026-2201, version 1. Upload only this one correction. Leave Written reply blank.</li><li>Wait for the agent. The earlier invoice should remain visible as Superseded.</li></ol>
+    <p><strong>Expected final result</strong><br>The current invoice total is SGD 2,600.00, both checks pass, and the document review should complete.</p>
+    <ul><li><a href="02-invoice-correction/01-invoice-incorrect.pdf" download>01-invoice-incorrect.pdf</a> <span>invoice</span></li><li><a href="02-invoice-correction/02-full-receipt.pdf" download>02-full-receipt.pdf</a> <span>receipt</span></li><li><a href="02-invoice-correction/03-invoice-corrected-v2.pdf" download>03-invoice-corrected-v2.pdf</a> <span>invoice</span></li></ul>
+    <a href="02-invoice-correction/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="03-partial-delivery" data-group="Document checks">
+  <div class="kicker">03 · Document checks</div>
+  <h2>The delivery is incomplete</h2>
+  <p>Add proof of a second delivery without replacing the first receipt.</p>
+  <p class="parties">Harbour Hygiene Supply Pte Ltd → Fernvale Hospitality Pte Ltd<br>
+    Invoice HH-2026-3301</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-first-delivery-120.pdf</p>
+    <strong>Expected first result</strong><p>The SGD 2,550.00 invoice is correct. Only 120 of 200 packs have a receipt; the agent should request evidence for the other 80 packs.</p>
+  </div>
+  <a class="button secondary" href="03-partial-delivery.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <ol><li>Start with 01 as the invoice and 02 as the receipt. Leave Written message blank.</li><li>When the case is waiting for delivery evidence, add 03 in Delivery receipt PDFs.</li><li>Keep Replacing an earlier document? set to No - adding new evidence. Leave Written reply blank.</li><li>Wait for the agent. The receipt check should show two separate deliveries: 120 + 80 packs.</li></ol>
+    <p><strong>Expected final result</strong><br>200 of 200 packs are covered. Both receipts stay active and the document review should complete.</p>
+    <ul><li><a href="03-partial-delivery/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="03-partial-delivery/02-first-delivery-120.pdf" download>02-first-delivery-120.pdf</a> <span>receipt</span></li><li><a href="03-partial-delivery/03-second-delivery-80.pdf" download>03-second-delivery-80.pdf</a> <span>receipt</span></li></ul>
+    <a href="03-partial-delivery/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="04-duplicate-receipt" data-group="Document checks">
+  <div class="kicker">04 · Document checks</div>
+  <h2>A copied receipt counts once</h2>
+  <p>A repeated PDF must not turn one delivery into two.</p>
+  <p class="parties">Beacon Storage Supplies Pte Ltd → Willow Logistics Pte Ltd<br>
+    Invoice BS-2026-4401</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-first-receipt-60.pdf, 03-copy-of-first-receipt.pdf</p>
+    <strong>Expected first result</strong><p>The invoice is SGD 2,400.00. Files 02 and 03 are identical copies of one receipt: coverage must remain 60 of 100 boxes, not 120.</p>
+  </div>
+  <a class="button secondary" href="04-duplicate-receipt.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <ol><li>Create a new case with 01 as the invoice. Select BOTH 02 and 03 in Delivery receipt PDFs in the same upload.</li><li>Leave Written message blank. Wait for the agent and confirm only 60 boxes count. The duplicate can be suppressed rather than displayed as a separate source.</li><li>Add 04 as a Delivery receipt PDF. Keep replacement set to No - adding new evidence.</li><li>Wait for the agent. Coverage should become 60 + 40 = 100 boxes. If you try uploading an already saved PDF again, an Already received message is also valid behaviour.</li></ol>
+    <p><strong>Expected final result</strong><br>The extra copy never increases coverage. Only the new second delivery brings coverage to 100 and allows completion.</p>
+    <ul><li><a href="04-duplicate-receipt/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="04-duplicate-receipt/02-first-receipt-60.pdf" download>02-first-receipt-60.pdf</a> <span>receipt</span></li><li><a href="04-duplicate-receipt/03-copy-of-first-receipt.pdf" download>03-copy-of-first-receipt.pdf</a> <span>receipt</span></li><li><a href="04-duplicate-receipt/04-second-receipt-40.pdf" download>04-second-receipt-40.pdf</a> <span>receipt</span></li></ul>
+    <a href="04-duplicate-receipt/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="05-buyer-dispute" data-group="Human review">
+  <div class="kicker">05 · Human review</div>
+  <h2>The buyer disputes a receipt</h2>
+  <p>A written reply reopens a completed review and needs a human decision.</p>
+  <p class="parties">Alton Labware Pte Ltd → Pinecrest Diagnostics Pte Ltd<br>
+    Invoice AL-2026-5501</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-original-receipt-100.pdf</p>
+    <strong>Expected first result</strong><p>The SGD 4,500.00 invoice and original 100-crate receipt initially agree. Wait for Review complete before adding the buyer&#x27;s message.</p>
+  </div>
+  <a class="button secondary" href="05-buyer-dispute.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <ol><li>Start with 01 as the invoice and 02 as the receipt. Leave Written message blank and wait for Review complete.</li><li>Choose Add documents or reply, upload no file, and paste the text from buyer-reply.txt into Written reply. Put Maya Ho - Pinecrest Diagnostics Pte Ltd in Who wrote this message?.</li><li>The case should reopen with a decision task. In Decisions, open and claim the task as Alex Chen. Select Retain the dispute and request specific evidence, covering the message and receipt.</li><li>Use receipt PD-GRN-5501, delivery AL-DEL-5501 and claimed quantity 80. Reason: Buyer reports only 80 crates in the first delivery; request a corrected receipt and proof of the balance. Save the decision.</li><li>When corrected evidence is requested, add 03 as a Delivery receipt PDF and select the earlier PD-GRN-5501 receipt under Replacing an earlier document?. Upload it alone, without another written reply.</li><li>Add 04 as a Delivery receipt PDF, keeping replacement set to No. Wait for the agent. Any remaining message-review task needs a recorded human disposition before completion.</li></ol>
+    <p><strong>Expected final result</strong><br>The old 100-crate receipt is superseded. The current evidence is 80 + 20 = 100 crates. Completion requires the human decision as well as matching documents.</p>
+    <ul><li><a href="05-buyer-dispute/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="05-buyer-dispute/02-original-receipt-100.pdf" download>02-original-receipt-100.pdf</a> <span>receipt</span></li><li><a href="05-buyer-dispute/03-corrected-receipt-v2-80.pdf" download>03-corrected-receipt-v2-80.pdf</a> <span>receipt</span></li><li><a href="05-buyer-dispute/04-later-delivery-20.pdf" download>04-later-delivery-20.pdf</a> <span>receipt</span></li><li><a href="05-buyer-dispute/buyer-reply.txt" download>Message wording</a> · Maya Ho - Pinecrest Diagnostics Pte Ltd</li></ul>
+    <a href="05-buyer-dispute/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="06-dispatch-is-not-receipt" data-group="Document checks">
+  <div class="kicker">06 · Document checks</div>
+  <h2>Dispatched does not mean received</h2>
+  <p>The seller&#x27;s dispatch note is not the buyer&#x27;s receipt acknowledgement.</p>
+  <p class="parties">Lakeside Maintenance Supply Pte Ltd → Riverside Property Services Pte Ltd<br>
+    Invoice LM-2026-6601</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-seller-dispatch-note.pdf</p>
+    <strong>Expected first result</strong><p>The SGD 2,150.00 invoice is correct. The dispatch note says goods left the seller; it does not prove the buyer received them. Expect the note to be flagged and buyer receipt evidence to be requested, possibly through a review task.</p>
+  </div>
+  <a class="button secondary" href="06-dispatch-is-not-receipt.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <ol><li>Start with 01 as the invoice. Deliberately put 02 in Delivery receipt PDFs to test whether the app rejects dispatch as proof of receipt. Leave Written message blank.</li><li>Wait for the agent. Confirm that the dispatch note does not count as 50 cartons received. A flagged document or an evidence-review task is expected, not an app failure.</li><li>Add 03 in Delivery receipt PDFs. Keep Replacing an earlier document? set to No: a buyer&#x27;s receipt is new evidence, not a replacement for the seller&#x27;s dispatch note.</li><li>After the buyer receipt is accepted, open the Rejected document decision. Choose Exclude this rejected document from the review. Reason: The seller dispatch note is not receipt evidence; the buyer receipt independently confirms all 50 cartons.</li></ol>
+    <p><strong>Expected final result</strong><br>The rejected dispatch note remains in history and counts toward no check. The buyer receipt covers all 50 cartons, and the recorded exclusion allows completion.</p>
+    <ul><li><a href="06-dispatch-is-not-receipt/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="06-dispatch-is-not-receipt/02-seller-dispatch-note.pdf" download>02-seller-dispatch-note.pdf</a> <span>dispatch</span></li><li><a href="06-dispatch-is-not-receipt/03-buyer-receipt.pdf" download>03-buyer-receipt.pdf</a> <span>receipt</span></li></ul>
+    <a href="06-dispatch-is-not-receipt/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="07-two-gaps" data-group="Document checks">
+  <div class="kicker">07 · Document checks</div>
+  <h2>Two gaps, one follow-up</h2>
+  <p>One request should cover both the wrong total and the missing delivery.</p>
+  <p class="parties">Alder Trade Supplies Pte Ltd → Cedar Commercial Services Pte Ltd<br>
+    Invoice AT-2026-0701</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-first-receipt-60.pdf</p>
+    <strong>Expected first result</strong><p>100 x SGD 25.00 = SGD 2,500.00, but the invoice states 2,600.00. Only 60 boxes are covered. One request should contain two items.</p>
+  </div>
+  <a class="button secondary" href="07-two-gaps.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <ol><li>Start with 01 as the invoice and 02 as the receipt. Leave Written message blank.</li><li>Open Requests &amp; replies: one request should ask for an invoice correction and evidence for the other 40 boxes.</li><li>Add 03 as the Invoice PDF, replacing the original invoice version 1. The receipt gap must remain open.</li><li>Add 04 as a new Delivery receipt PDF. Keep replacement set to No. Both gaps should now be resolved.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="07-two-gaps/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="07-two-gaps/02-first-receipt-60.pdf" download>02-first-receipt-60.pdf</a> <span>receipt</span></li><li><a href="07-two-gaps/03-corrected-invoice-v2.pdf" download>03-corrected-invoice-v2.pdf</a> <span>invoice</span></li><li><a href="07-two-gaps/04-balance-receipt-40.pdf" download>04-balance-receipt-40.pdf</a> <span>receipt</span></li></ul>
+    <a href="07-two-gaps/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="08-cumulative-receipt" data-group="Document checks">
+  <div class="kicker">08 · Document checks</div>
+  <h2>A running total is not a new delivery</h2>
+  <p>Replace a cumulative receipt with the quantity for that delivery alone.</p>
+  <p class="parties">Alder Trade Supplies Pte Ltd → Cedar Commercial Services Pte Ltd<br>
+    Invoice AT-2026-0801</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-first-receipt-60.pdf, 03-cumulative-receipt-100.pdf</p>
+    <strong>Expected first result</strong><p>Do not add 60 + 100. The second receipt is cumulative, so receipt coverage needs clarification.</p>
+  </div>
+  <a class="button secondary" href="08-cumulative-receipt.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <p>As supervisor, open Policy &gt; Edit policy &gt; Documents and corrections. Allow Quantity basis (cumulative or per delivery) for Delivery receipt corrections, then publish a new version before creating this case. This permits a cumulative total to be clarified as a per-delivery quantity; it does not change older cases.</p><ol><li>Start with 01 as the invoice and BOTH 02 and 03 as delivery receipts.</li><li>Inspect the cumulative-quantity finding and the clarification request. The case must remain open.</li><li>Add 04 as a receipt and choose the earlier CC-GRN-0802 version 1 under Replacing an earlier document?.</li><li>Wait for the agent. The final evidence should cover 60 + 40 = 100 boxes.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="08-cumulative-receipt/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="08-cumulative-receipt/02-first-receipt-60.pdf" download>02-first-receipt-60.pdf</a> <span>receipt</span></li><li><a href="08-cumulative-receipt/03-cumulative-receipt-100.pdf" download>03-cumulative-receipt-100.pdf</a> <span>receipt</span></li><li><a href="08-cumulative-receipt/04-corrected-receipt-v2-40.pdf" download>04-corrected-receipt-v2-40.pdf</a> <span>receipt</span></li></ul>
+    <a href="08-cumulative-receipt/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="09-replacement-scope" data-group="Human review">
+  <div class="kicker">09 · Human review</div>
+  <h2>A correction changes the sale</h2>
+  <p>Reject a changed quantity even when its multiplication is correct.</p>
+  <p class="parties">Alder Trade Supplies Pte Ltd → Cedar Commercial Services Pte Ltd<br>
+    Invoice AT-2026-0901</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-full-receipt.pdf</p>
+    <strong>Expected first result</strong><p>The original amount is wrong. The later changed-quantity invoice is intentionally outside correction authority.</p>
+  </div>
+  <a class="button secondary" href="09-replacement-scope.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <ol><li>Start with 01 and 02. Wait for the invoice-correction request.</li><li>Upload 03 as an invoice replacing version 1. This changes the quantity to 104, so it must not silently amend the financed sale.</li><li>Open the evidence decision and choose Authorise a further request. Reason: Keep the original 100-box sale; request an amount-only correction.</li><li>Add 04 as the invoice, replacing the original version 1 rather than the rejected copy. Wait for completion.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="09-replacement-scope/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="09-replacement-scope/02-full-receipt.pdf" download>02-full-receipt.pdf</a> <span>receipt</span></li><li><a href="09-replacement-scope/03-invalid-quantity-change-v2.pdf" download>03-invalid-quantity-change-v2.pdf</a> <span>invoice</span></li><li><a href="09-replacement-scope/04-amount-only-correction-v2.pdf" download>04-amount-only-correction-v2.pdf</a> <span>invoice</span></li></ul>
+    <a href="09-replacement-scope/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="10-delivery-explanation" data-group="Human review">
+  <div class="kicker">10 · Human review</div>
+  <h2>A message agrees with the receipt</h2>
+  <p>A harmless explanation still receives a recorded human decision.</p>
+  <p class="parties">Alder Trade Supplies Pte Ltd → Cedar Commercial Services Pte Ltd<br>
+    Invoice AT-2026-1001</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-full-receipt.pdf</p>
+    <strong>Expected first result</strong><p>Both documents agree, but the written message must receive a human decision before completion.</p>
+  </div>
+  <a class="button secondary" href="10-delivery-explanation.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <ol><li>Start with 01 as the invoice and 02 as the receipt. Paste buyer-reply.txt into Written message and enter the named sender.</li><li>Wait for a message-review task. Open its source comparison and confirm the agent has kept the document facts unchanged.</li><li>Choose Record a source-backed interpretation. Record why the message does not change receipt coverage.</li><li>Wait for completion and inspect the saved decision in Review summary.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="10-delivery-explanation/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="10-delivery-explanation/02-full-receipt.pdf" download>02-full-receipt.pdf</a> <span>receipt</span></li><li><a href="10-delivery-explanation/buyer-reply.txt" download>Message wording</a> · Marcus Tan - Cedar Commercial Services Pte Ltd</li></ul>
+    <a href="10-delivery-explanation/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="11-unrelated-message" data-group="Human review">
+  <div class="kicker">11 · Human review</div>
+  <h2>A message is unrelated to the checks</h2>
+  <p>An administrative note does not become delivery evidence.</p>
+  <p class="parties">Alder Trade Supplies Pte Ltd → Cedar Commercial Services Pte Ltd<br>
+    Invoice AT-2026-1101</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-full-receipt.pdf</p>
+    <strong>Expected first result</strong><p>Both documents agree, but the written message must receive a human decision before completion.</p>
+  </div>
+  <a class="button secondary" href="11-unrelated-message.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <ol><li>Start with 01 as the invoice and 02 as the receipt. Paste buyer-reply.txt into Written message and enter the named sender.</li><li>Wait for a message-review task. Open its source comparison and confirm the agent has kept the document facts unchanged.</li><li>Choose Mark as not relevant to the checklist. Record why the message does not change receipt coverage.</li><li>Wait for completion and inspect the saved decision in Review summary.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="11-unrelated-message/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="11-unrelated-message/02-full-receipt.pdf" download>02-full-receipt.pdf</a> <span>receipt</span></li><li><a href="11-unrelated-message/buyer-reply.txt" download>Message wording</a> · Marcus Tan - Cedar Commercial Services Pte Ltd</li></ul>
+    <a href="11-unrelated-message/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="12-untrusted-instructions" data-group="Human review">
+  <div class="kicker">12 · Human review</div>
+  <h2>A document cannot instruct the agent</h2>
+  <p>Ignore embedded requests to bypass checks or read another case.</p>
+  <p class="parties">Alder Trade Supplies Pte Ltd → Cedar Commercial Services Pte Ltd<br>
+    Invoice AT-2026-1201</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-full-receipt.pdf</p>
+    <strong>Expected first result</strong><p>Both documents agree, but the written message must receive a human decision before completion.</p>
+  </div>
+  <a class="button secondary" href="12-untrusted-instructions.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <ol><li>Start with 01 as the invoice and 02 as the receipt. Paste buyer-reply.txt into Written message and enter the named sender.</li><li>Wait for a message-review task. Open its source comparison and confirm the agent has kept the document facts unchanged.</li><li>Choose Mark as not relevant to the checklist. Record why the message does not change receipt coverage.</li><li>Wait for completion and inspect the saved decision in Review summary.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="12-untrusted-instructions/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="12-untrusted-instructions/02-full-receipt.pdf" download>02-full-receipt.pdf</a> <span>receipt</span></li><li><a href="12-untrusted-instructions/buyer-reply.txt" download>Message wording</a> · Marcus Tan - Cedar Commercial Services Pte Ltd</li></ul>
+    <a href="12-untrusted-instructions/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="13-unsupported-tax" data-group="Human review">
+  <div class="kicker">13 · Human review</div>
+  <h2>A valid invoice needs wider review</h2>
+  <p>Tax and multiple lines are outside this sample checklist.</p>
+  <p class="parties">Alder Trade Supplies Pte Ltd → Cedar Commercial Services Pte Ltd<br>
+    Invoice AT-2026-1301</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-full-receipt.pdf</p>
+    <strong>Expected first result</strong><p>The invoice is internally consistent, but GST and a second goods line are outside the automatic checklist. It must not be marked complete.</p>
+  </div>
+  <a class="button secondary" href="13-unsupported-tax.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <ol><li>Start with 01 as the invoice and 02 as the receipt. Leave Written message blank.</li><li>Inspect the unsupported-document finding. The valid GST must not be removed just to make the software pass.</li><li>The case remains open for a bank process that supports tax and multiple lines. If a reviewer task offers Keep on hold, record this limitation and choose it.</li></ol>
+    <p><strong>Expected final result</strong><br>The review remains open. This is the correct safe outcome for a transaction outside the supported checklist.</p>
+    <ul><li><a href="13-unsupported-tax/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="13-unsupported-tax/02-full-receipt.pdf" download>02-full-receipt.pdf</a> <span>receipt</span></li></ul>
+    <a href="13-unsupported-tax/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="14-matching-templates" data-group="Document appearance">
+  <div class="kicker">14 · Document appearance</div>
+  <h2>Documents match their reference forms</h2>
+  <p>Compare both seller and buyer layouts while allowing transaction values to differ.</p>
+  <p class="parties">Alder Trade Supplies Pte Ltd → Cedar Commercial Services Pte Ltd<br>
+    Invoice AT-2026-1401</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-full-receipt.pdf</p>
+    <strong>Expected first result</strong><p>The invoice is SGD 2,500.00 and the buyer confirms all 100 boxes.</p>
+  </div>
+  <a class="button secondary" href="14-matching-templates.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <p>In Optional document checks, enable possible tampering and select the two reference PDFs in their matching reference fields. Reference files are examples supplied by the reviewer, not proof of authenticity.</p><ol><li>Start with 01 as the invoice and 02 as the receipt. Put reference-invoice.pdf and reference-receipt.pdf in their reference fields, not the evidence inputs.</li><li>Wait for the document appearance results. The layouts should match despite different transaction references.</li><li>Open Review summary and confirm the selected references and visual results are recorded.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="14-matching-templates/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="14-matching-templates/02-full-receipt.pdf" download>02-full-receipt.pdf</a> <span>receipt</span></li><li><a href="14-matching-templates/reference-invoice.pdf" download>reference-invoice.pdf</a> <span>invoice template</span></li><li><a href="14-matching-templates/reference-receipt.pdf" download>reference-receipt.pdf</a> <span>receipt template</span></li></ul>
+    <a href="14-matching-templates/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="15-template-difference" data-group="Document appearance">
+  <div class="kicker">15 · Document appearance</div>
+  <h2>A supplier changes its invoice form</h2>
+  <p>A template mismatch is a review question, not proof of fraud.</p>
+  <p class="parties">Alder Trade Supplies Pte Ltd → Cedar Commercial Services Pte Ltd<br>
+    Invoice AT-2026-1501</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-full-receipt.pdf</p>
+    <strong>Expected first result</strong><p>The business values agree, but the supplied invoice uses a different header and table layout from the reference.</p>
+  </div>
+  <a class="button secondary" href="15-template-difference.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <p>In Optional document checks, supply reference-invoice.pdf as the Invoice reference PDF. Leave tampering unchecked to isolate template comparison.</p><ol><li>Upload 01 as the invoice and 02 as the receipt, selecting reference-invoice.pdf only in the invoice reference field.</li><li>Open the document appearance task. Compare the highlighted areas with Show reference template.</li><li>For this fictional test, record: The issuer has confirmed its new form; transaction details are unchanged. Choose Record appearance review and continue.</li><li>Both the reference mismatch and the recorded human acceptance should remain in the summary.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="15-template-difference/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="15-template-difference/02-full-receipt.pdf" download>02-full-receipt.pdf</a> <span>receipt</span></li><li><a href="15-template-difference/reference-invoice.pdf" download>reference-invoice.pdf</a> <span>invoice template</span></li></ul>
+    <a href="15-template-difference/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="16-edited-identifier" data-group="Document appearance">
+  <div class="kicker">16 · Document appearance</div>
+  <h2>An invoice number has been overwritten</h2>
+  <p>Locate a covered identifier and keep the case on hold for issuer verification.</p>
+  <p class="parties">Alder Trade Supplies Pte Ltd → Cedar Commercial Services Pte Ltd<br>
+    Invoice AT-2026-1601</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-full-receipt.pdf</p>
+    <strong>Expected first result</strong><p>The visible values can agree while PDF layers reveal an overwritten invoice number. Appearance findings must prevent completion.</p>
+  </div>
+  <a class="button secondary" href="16-edited-identifier.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <p>Enable Check for possible document tampering. The invoice is an intentionally altered fictional test fixture: its old header number remains under a covering patch.</p><ol><li>Upload 01 and 02, with possible tampering enabled. Do not use reference-invoice.pdf as additional evidence; it is available for visual comparison only.</li><li>Open the appearance task and click the finding to highlight the edited identifier. Inspect both the PDF-layer observation and any Gemini observation.</li><li>Choose Keep the case on hold. Reason: An overwritten identifier needs independent confirmation and a newly issued original from the seller.</li></ol>
+    <p><strong>Expected final result</strong><br>Paused on hold, with the suspect area and reviewer reason retained. The app must not declare the document authentic or approve financing.</p>
+    <ul><li><a href="16-edited-identifier/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="16-edited-identifier/02-full-receipt.pdf" download>02-full-receipt.pdf</a> <span>receipt</span></li><li><a href="16-edited-identifier/reference-invoice.pdf" download>reference-invoice.pdf</a> <span>invoice template</span></li></ul>
+    <a href="16-edited-identifier/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="17-no-response" data-group="Follow-up and recovery">
+  <div class="kicker">17 · Follow-up and recovery</div>
+  <h2>Reminder, escalation, then evidence</h2>
+  <p>Waiting consumes no model calls; a reviewer can authorise another request.</p>
+  <p class="parties">Jurong Fresh Produce Pte Ltd → East Coast Hospitality Group Pte Ltd<br>
+    Invoice INV-505</p>
+  <div class="expect">
+    <strong>Prepared demo</strong>
+    <p>no-response</p>
+    <strong>Expected first result</strong><p>An invoice with no receipt waits for the business. Under the default policy, 48 hours triggers a reminder and another 72 hours triggers human escalation.</p>
+  </div>
+  <a class="button secondary" href="17-no-response.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <p>Use New case &gt; Demo scenarios &gt; Fresh produce - invoice INV-505, in Autonomous mode. The included documents match that prepared case. The demo clock is available only on prepared cases.</p><ol><li>Create the INV-505 demo case and wait for the missing-receipt request.</li><li>In Customer exchange (demo), advance the demo clock by 48 hours. Verify one reminder appears without a new model call.</li><li>Advance another 72 hours. Open the No reply decision and authorise a further request round, explaining that the business needs one more chance to reply.</li><li>In Customer exchange (demo), send Receipt R1 for all 240 crates. Wait for completion.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="17-no-response/01-inv-505-v1.pdf" download>01-inv-505-v1.pdf</a> <span>invoice</span></li><li><a href="17-no-response/02-r1-505.pdf" download>02-r1-505.pdf</a> <span>receipt</span></li></ul>
+    <a href="17-no-response/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="18-service-recovery" data-group="Follow-up and recovery">
+  <div class="kicker">18 · Follow-up and recovery</div>
+  <h2>Resume after a model outage</h2>
+  <p>A temporary model failure preserves work and opens a recovery task.</p>
+  <p class="parties">Alder Trade Supplies Pte Ltd → Cedar Commercial Services Pte Ltd<br>
+    Invoice AT-2026-1801</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-full-receipt.pdf</p>
+    <strong>Expected first result</strong><p>The case pauses on a simulated model timeout. Its originals and queued work remain saved.</p>
+  </div>
+  <a class="button secondary" href="18-service-recovery.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <p>Run this in an isolated demo workspace with no other active cases. In Operations, simulate a timeout for the next 10 model calls; this affects the organisation, so clear it immediately after the pause.</p><ol><li>Set the timeout simulation, then start a new upload case with 01 and 02.</li><li>Wait for Paused and a Service failure task. Open Evidence to confirm the originals remain accessible.</li><li>In Operations, clear the simulated failure. Return to the case and choose Resume automation on its recovery task, recording that the service is available.</li><li>Wait for completion. Do not upload the same documents again.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="18-service-recovery/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="18-service-recovery/02-full-receipt.pdf" download>02-full-receipt.pdf</a> <span>receipt</span></li></ul>
+    <a href="18-service-recovery/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="19-budget-extension" data-group="Follow-up and recovery">
+  <div class="kicker">19 · Follow-up and recovery</div>
+  <h2>A supervisor extends the run allowance</h2>
+  <p>Reaching an automation limit does not discard the case.</p>
+  <p class="parties">Alder Trade Supplies Pte Ltd → Cedar Commercial Services Pte Ltd<br>
+    Invoice AT-2026-1901</p>
+  <div class="expect">
+    <strong>Start with</strong>
+    <p>01-invoice.pdf, 02-full-receipt.pdf</p>
+    <strong>Expected first result</strong><p>The first run reads the two PDFs. The next run hits the one-run allowance and pauses before completion.</p>
+  </div>
+  <a class="button secondary" href="19-budget-extension.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <p>Use an isolated demo workspace. As supervisor, publish a temporary policy with Agent runs per case set to 1, retaining the other defaults. Create this case, then restore 12 runs in a new published version for subsequent cases. This case stays pinned to the one-run policy.</p><ol><li>Start with 01 and 02 under the temporary one-run policy. Leave optional visual checks off.</li><li>When Budget exhausted appears, open the decision as Alex Chen or another supervisor.</li><li>Choose Grant an extension: 4 extra agent runs and USD 0.25. Reason: Allow the already-read documents to finish review.</li><li>Wait for completion. The extension and original policy version remain in history.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="19-budget-extension/01-invoice.pdf" download>01-invoice.pdf</a> <span>invoice</span></li><li><a href="19-budget-extension/02-full-receipt.pdf" download>02-full-receipt.pdf</a> <span>receipt</span></li></ul>
+    <a href="19-budget-extension/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="20-withdrawn-evidence" data-group="Follow-up and recovery">
+  <div class="kicker">20 · Follow-up and recovery</div>
+  <h2>A receipt is withdrawn after completion</h2>
+  <p>Reopen only affected work and retain the superseded summary.</p>
+  <p class="parties">Orchid Bay Garments Pte Ltd → Lionstar Retail Pte Ltd<br>
+    Invoice INV-303</p>
+  <div class="expect">
+    <strong>Prepared demo</strong>
+    <p>clean-case</p>
+    <strong>Expected first result</strong><p>A valid invoice and authorised logistics receipt initially complete. Withdrawal must invalidate the delivery result.</p>
+  </div>
+  <a class="button secondary" href="20-withdrawn-evidence.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <p>Use New case &gt; Demo scenarios &gt; Uniform order - invoice INV-303, in Autonomous mode. Its buyer-authorised logistics provider can issue receipt evidence in this prepared case. Ordinary uploads require a buyer-issued receipt.</p><ol><li>Create INV-303 and wait for Review complete. Download its summary.</li><li>In Customer exchange (demo), send Seller withdraws the receipt.</li><li>Confirm the case reopens: the invoice check still passes, receipt coverage is missing, and the earlier summary is Superseded.</li><li>Send Reissued receipt for all 50 cartons from the logistics provider. Wait for a new completed summary.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="20-withdrawn-evidence/01-inv-303-v1.pdf" download>01-inv-303-v1.pdf</a> <span>invoice</span></li><li><a href="20-withdrawn-evidence/02-r1-303.pdf" download>02-r1-303.pdf</a> <span>receipt</span></li><li><a href="20-withdrawn-evidence/03-r1-303-reissued.pdf" download>03-r1-303-reissued.pdf</a> <span>receipt</span></li></ul>
+    <a href="20-withdrawn-evidence/README.txt" download>Download instructions</a>
+  </details>
+</article>
+<article id="21-controlled-modes" data-group="Follow-up and recovery">
+  <div class="kicker">21 · Follow-up and recovery</div>
+  <h2>Manual, shadow and autonomous modes</h2>
+  <p>The same case obeys its selected action authority.</p>
+  <p class="parties">Harbour Lane Trading Pte Ltd → Meridian Foods Pte Ltd<br>
+    Invoice INV-101</p>
+  <div class="expect">
+    <strong>Prepared demo</strong>
+    <p>two-gaps</p>
+    <strong>Expected first result</strong><p>Off mode queues no agent. Manual checks expose both gaps; shadow mode may draft but must not issue a request.</p>
+  </div>
+  <a class="button secondary" href="21-controlled-modes.zip" download>Download scenario</a>
+  <details>
+    <summary>Setup, actions and documents</summary>
+    <p>Use New case &gt; Demo scenarios &gt; Packaging boxes - invoice INV-101. Select Off (manual) before creating the case. The included PDFs match this prepared sale.</p><ol><li>Create INV-101 in Off (manual) mode. In Controls, run the manual checklist checks.</li><li>Switch to Shadow and run the agent if prompted. Inspect proposals: no request should be Issued and no review should complete.</li><li>Switch to Autonomous. The agent should issue the tracked request for both gaps.</li><li>In Customer exchange (demo), send the remaining-20-boxes dispatch update. It must not count as receipt.</li><li>Send Receipt R2 for D2, then its duplicate copy. The duplicate must not add another 20 boxes or reset allowances.</li><li>Send the amount-only invoice v2 correction. Wait for completion.</li></ol>
+    <p><strong>Expected final result</strong><br>Document review completes with a retained summary.</p>
+    <ul><li><a href="21-controlled-modes/01-inv-101-v1.pdf" download>01-inv-101-v1.pdf</a> <span>invoice</span></li><li><a href="21-controlled-modes/02-r1-d1.pdf" download>02-r1-d1.pdf</a> <span>receipt</span></li><li><a href="21-controlled-modes/03-r2-d2.pdf" download>03-r2-d2.pdf</a> <span>receipt</span></li><li><a href="21-controlled-modes/04-inv-101-v2.pdf" download>04-inv-101-v2.pdf</a> <span>invoice</span></li></ul>
+    <a href="21-controlled-modes/README.txt" download>Download instructions</a>
+  </details>
+</article></section>
+      <footer>
+        All records are fictional. Templates and appearance findings do not
+        establish authenticity. Scenarios use the sample checklist; required
+        policy changes are stated explicitly. External messaging and lending
+        approval are outside this application.
+      </footer>
+    </main>
+    <script>
+      const search = document.querySelector("#search"),
+        cards = [...document.querySelectorAll("article")],
+        filters = [...document.querySelectorAll("[data-filter]")];
+      let group = "all";
+      function apply() {
+        let count = 0;
+        const query = search.value.toLowerCase();
+        for (const card of cards) {
+          card.hidden =
+            (group !== "all" && card.dataset.group !== group) ||
+            !card.textContent.toLowerCase().includes(query);
+          if (!card.hidden) count++;
+        }
+        document.querySelector("#count").textContent =
+          `${count} scenario${count === 1 ? "" : "s"}`;
+      }
+      search.addEventListener("input", apply);
+      for (const button of filters)
+        button.addEventListener("click", () => {
+          group = button.dataset.filter;
+          for (const item of filters)
+            item.setAttribute("aria-pressed", String(item === button));
+          apply();
+        });
+    </script>
+  </body>
+</html>

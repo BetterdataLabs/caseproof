@@ -1,0 +1,560 @@
+[
+  {
+    "path": "01-clean-case/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Seabrook Packaging Pte Ltd",
+    "buyer": "Elmwood Retail Pte Ltd",
+    "invoice": "SP-2026-1101",
+    "sha256": "e08926e85e6407cf8cb90e8dfbf8a9439a607061ec232f91ea7e5e787707a35c"
+  },
+  {
+    "path": "01-clean-case/02-full-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Seabrook Packaging Pte Ltd",
+    "buyer": "Elmwood Retail Pte Ltd",
+    "invoice": "SP-2026-1101",
+    "sha256": "c6715cebddff6a057be8aeb136371feea755b8769970cbd2961e6af9532436c6"
+  },
+  {
+    "path": "02-invoice-correction/01-invoice-incorrect.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Meridian Office Supply Pte Ltd",
+    "buyer": "Juniper Business Centre Pte Ltd",
+    "invoice": "MO-2026-2201",
+    "sha256": "6c3b5219590e690c91c3fd92b1a103419d4f224fa606a1231da4ddb1a7414990"
+  },
+  {
+    "path": "02-invoice-correction/02-full-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Meridian Office Supply Pte Ltd",
+    "buyer": "Juniper Business Centre Pte Ltd",
+    "invoice": "MO-2026-2201",
+    "sha256": "a3e6f35b796fe0449b6f40987b382adf63f8aafc8c39b1d809eb486d381f178e"
+  },
+  {
+    "path": "02-invoice-correction/03-invoice-corrected-v2.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Meridian Office Supply Pte Ltd",
+    "buyer": "Juniper Business Centre Pte Ltd",
+    "invoice": "MO-2026-2201",
+    "sha256": "086d3915068cda6cf810223d8dced0819295bc07a41a283aaeedc75c81927c02"
+  },
+  {
+    "path": "03-partial-delivery/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Harbour Hygiene Supply Pte Ltd",
+    "buyer": "Fernvale Hospitality Pte Ltd",
+    "invoice": "HH-2026-3301",
+    "sha256": "fc3370a8ad494b432c31fafc24095e06d1e3df608069a055738e3b73c399daea"
+  },
+  {
+    "path": "03-partial-delivery/02-first-delivery-120.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Harbour Hygiene Supply Pte Ltd",
+    "buyer": "Fernvale Hospitality Pte Ltd",
+    "invoice": "HH-2026-3301",
+    "sha256": "290e68c09aebb4eaa3981423dd168737acd38ab2c1bd261165841099b622d6e2"
+  },
+  {
+    "path": "03-partial-delivery/03-second-delivery-80.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Harbour Hygiene Supply Pte Ltd",
+    "buyer": "Fernvale Hospitality Pte Ltd",
+    "invoice": "HH-2026-3301",
+    "sha256": "00ae0060d1cf30c01e1e75f25fc28573bfe3283fa1265f54d31b89901c68666e"
+  },
+  {
+    "path": "04-duplicate-receipt/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Beacon Storage Supplies Pte Ltd",
+    "buyer": "Willow Logistics Pte Ltd",
+    "invoice": "BS-2026-4401",
+    "sha256": "756c441bd730e26b7f7947ae2c0e3951eafa1778e2dc494752673e4d5b2a4ce4"
+  },
+  {
+    "path": "04-duplicate-receipt/02-first-receipt-60.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Beacon Storage Supplies Pte Ltd",
+    "buyer": "Willow Logistics Pte Ltd",
+    "invoice": "BS-2026-4401",
+    "sha256": "d7bef688493d234c3db63548a51d6cddd3d8891886ea836cdb589373078c10c8"
+  },
+  {
+    "path": "04-duplicate-receipt/03-copy-of-first-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Beacon Storage Supplies Pte Ltd",
+    "buyer": "Willow Logistics Pte Ltd",
+    "invoice": "BS-2026-4401",
+    "sha256": "d7bef688493d234c3db63548a51d6cddd3d8891886ea836cdb589373078c10c8"
+  },
+  {
+    "path": "04-duplicate-receipt/04-second-receipt-40.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Beacon Storage Supplies Pte Ltd",
+    "buyer": "Willow Logistics Pte Ltd",
+    "invoice": "BS-2026-4401",
+    "sha256": "de72dcce53bfccf889e4ddd9bd596ece6dfc76849f81ee5338dbda19e9dd5d82"
+  },
+  {
+    "path": "05-buyer-dispute/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alton Labware Pte Ltd",
+    "buyer": "Pinecrest Diagnostics Pte Ltd",
+    "invoice": "AL-2026-5501",
+    "sha256": "c1b89175afc98456987b5ff6d9f8a92612e5324d45f9966f418820eafee706fb"
+  },
+  {
+    "path": "05-buyer-dispute/02-original-receipt-100.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alton Labware Pte Ltd",
+    "buyer": "Pinecrest Diagnostics Pte Ltd",
+    "invoice": "AL-2026-5501",
+    "sha256": "25c1ac86b896b9b64887e89db1b19ff2fa892b246f485f991fcf3cd224a705e1"
+  },
+  {
+    "path": "05-buyer-dispute/03-corrected-receipt-v2-80.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alton Labware Pte Ltd",
+    "buyer": "Pinecrest Diagnostics Pte Ltd",
+    "invoice": "AL-2026-5501",
+    "sha256": "4b27c3d1bb0c667db45be0c1c530046cc16e0dcf63292dad0605540a57766198"
+  },
+  {
+    "path": "05-buyer-dispute/04-later-delivery-20.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alton Labware Pte Ltd",
+    "buyer": "Pinecrest Diagnostics Pte Ltd",
+    "invoice": "AL-2026-5501",
+    "sha256": "8cad475c972d04cafa36d8f532aac99627d8ceab4cddba3b6e886831aa8239de"
+  },
+  {
+    "path": "06-dispatch-is-not-receipt/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Lakeside Maintenance Supply Pte Ltd",
+    "buyer": "Riverside Property Services Pte Ltd",
+    "invoice": "LM-2026-6601",
+    "sha256": "b8e5f617d41af7b8be49a16b8822464f29cb610a9754cb962a38aca716d25d79"
+  },
+  {
+    "path": "06-dispatch-is-not-receipt/02-seller-dispatch-note.pdf",
+    "kind": "dispatch",
+    "purpose": "evidence",
+    "seller": "Lakeside Maintenance Supply Pte Ltd",
+    "buyer": "Riverside Property Services Pte Ltd",
+    "invoice": "LM-2026-6601",
+    "sha256": "c3e4c109e4b809823a338c7df1f9ccc8acbeff891584c7c5cd41e596e8bf316a"
+  },
+  {
+    "path": "06-dispatch-is-not-receipt/03-buyer-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Lakeside Maintenance Supply Pte Ltd",
+    "buyer": "Riverside Property Services Pte Ltd",
+    "invoice": "LM-2026-6601",
+    "sha256": "3ad04a54051f5c5dcb4580af98db65e0d8981b3c7a449e45b7c582772e8fe141"
+  },
+  {
+    "path": "07-two-gaps/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0701",
+    "sha256": "48888e856671498374972ddee7fd26b5ce96c5d9f6c76d1cd5748ee53aa78222"
+  },
+  {
+    "path": "07-two-gaps/02-first-receipt-60.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0701",
+    "sha256": "087f8012684276209fb5cd4e64f50b24911b344c6a2254dde1bbc0a22f850ae5"
+  },
+  {
+    "path": "07-two-gaps/03-corrected-invoice-v2.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0701",
+    "sha256": "e40c1cb15362d94875a959664d9c59cf6510c447bd52a8062de8a71c4240e2a8"
+  },
+  {
+    "path": "07-two-gaps/04-balance-receipt-40.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0701",
+    "sha256": "36d3069f4df1f14b9d98570704a0c878a545356c6f6a19ddb4635ac252cda62b"
+  },
+  {
+    "path": "08-cumulative-receipt/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0801",
+    "sha256": "f4d77f7e877245519f69e14d9b221ad72b7ebcddea93c2a49275c923ffa48672"
+  },
+  {
+    "path": "08-cumulative-receipt/02-first-receipt-60.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0801",
+    "sha256": "58685f7d7df7aab2a7d181a1995eea43211a553b3d184a2433af33d98efb0dbb"
+  },
+  {
+    "path": "08-cumulative-receipt/03-cumulative-receipt-100.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0801",
+    "sha256": "5c2a3dc52a056d007c44fbfa9eef3aa619ed076460edbe9ea3268e4ed4a1e712"
+  },
+  {
+    "path": "08-cumulative-receipt/04-corrected-receipt-v2-40.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0801",
+    "sha256": "490491e889f4115667f2027128860d99504fe59e9960dc3f1da56a2894ece23c"
+  },
+  {
+    "path": "09-replacement-scope/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0901",
+    "sha256": "7c0b622519b70df583e58cb6acf47afbb5bb1d56a35052819dc2d0888a74f6d2"
+  },
+  {
+    "path": "09-replacement-scope/02-full-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0901",
+    "sha256": "fdd28dbcc6aa8f5bdb558a0c05dc797aa0cebe039d92460116bcec0ddc79b43b"
+  },
+  {
+    "path": "09-replacement-scope/03-invalid-quantity-change-v2.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0901",
+    "sha256": "5537d362abf4ee19ee4642a5401a2f18f81cc238bb445c47035cc6df9e2f8b21"
+  },
+  {
+    "path": "09-replacement-scope/04-amount-only-correction-v2.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0901",
+    "sha256": "238698d64eaa24c6308d51bc9e6b5ffd25d013056e9e0ef317dfa6ac6c7db7ba"
+  },
+  {
+    "path": "10-delivery-explanation/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1001",
+    "sha256": "f567af19961f4abfa0be332ea07d89764134f1d075f29cdc9e12ad5e82a59f4b"
+  },
+  {
+    "path": "10-delivery-explanation/02-full-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1001",
+    "sha256": "7589d7fd190b533c69537b153b73e12cbf93eaa5aa42ffd18b729d03f57ba6ca"
+  },
+  {
+    "path": "11-unrelated-message/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1101",
+    "sha256": "6ff98c4ea401f3281ae869550e7467e7eb117ee09a9f3c2d032b6d2bfc5c8198"
+  },
+  {
+    "path": "11-unrelated-message/02-full-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1101",
+    "sha256": "150cdf785207f38cacb8127c69a27ef0ab28bd73c086d1859eb642eef3a4d5a8"
+  },
+  {
+    "path": "12-untrusted-instructions/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1201",
+    "sha256": "8b2e0f19112cc7ba9409796f97a8c1a1ea28eb22d96c9cfc780c61e1f3f1eccc"
+  },
+  {
+    "path": "12-untrusted-instructions/02-full-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1201",
+    "sha256": "a5a06062c098cdd4933ef0c033afeced39552260e84497b98bd5758de652e587"
+  },
+  {
+    "path": "13-unsupported-tax/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1301",
+    "sha256": "21f2c3c69a8f22cd71f7211be99488136d6f7958746c37ec2f7a14dcc1309cc8"
+  },
+  {
+    "path": "13-unsupported-tax/02-full-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1301",
+    "sha256": "699868a1caaabd9d975fb57863c6a52e594e23cb93bc5b31263ff4af93c12a85"
+  },
+  {
+    "path": "14-matching-templates/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1401",
+    "sha256": "741887a7377dd239cc3f119d4ef867f218ae93be2d91b1d71401cbcc85bd3905"
+  },
+  {
+    "path": "14-matching-templates/02-full-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1401",
+    "sha256": "2db687eeae8cfa08656ab3b6ecd03cc76fc829b0a357a2e5f5bd6995400ccc89"
+  },
+  {
+    "path": "14-matching-templates/reference-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "invoice_template",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0401",
+    "sha256": "b98a74654700ab9b7a2a884eb7621eadc95f3c1edf4f32a37495ddecc3034e37"
+  },
+  {
+    "path": "14-matching-templates/reference-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "receipt_template",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-0401",
+    "sha256": "106c44a15d83db0655b74274749f2643e4b6c69aa22a4b2ec945d159db094139"
+  },
+  {
+    "path": "15-template-difference/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1501",
+    "sha256": "e0706f079fd329bca6ca80e8168bd1eb987bbba3e9c167c19d32ef978cfbcdc0"
+  },
+  {
+    "path": "15-template-difference/02-full-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1501",
+    "sha256": "e2cbf998e53d271883b76c864fb7f3be72b0a0065f561e872239df92b9c0ef05"
+  },
+  {
+    "path": "15-template-difference/reference-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "invoice_template",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1501",
+    "sha256": "8ecf1f7d7062742c0525d940ca3b82515fca690ff8bec8a48f82ac5d6f85d7c3"
+  },
+  {
+    "path": "16-edited-identifier/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1601",
+    "sha256": "be07a0fd5405e7ae1d969efc35bbee23062df7587318ee41f23fbd1e031c8293"
+  },
+  {
+    "path": "16-edited-identifier/02-full-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1601",
+    "sha256": "8f3108672cc130cb5ebfa59bedf382d78976ef703aca0eb671465a8a33978213"
+  },
+  {
+    "path": "16-edited-identifier/reference-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "invoice_template",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1601",
+    "sha256": "e92d513eaa6a49701e63543811c03829062994532bb355b66722d52f95c820bc"
+  },
+  {
+    "path": "17-no-response/01-inv-505-v1.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Jurong Fresh Produce Pte Ltd",
+    "buyer": "East Coast Hospitality Group Pte Ltd",
+    "invoice": "INV-505",
+    "sha256": "9ada91abd398bf1ea18885f4c7a4a9e834e34da9bd59f5d4e5446a2ea04cc1ad"
+  },
+  {
+    "path": "17-no-response/02-r1-505.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Jurong Fresh Produce Pte Ltd",
+    "buyer": "East Coast Hospitality Group Pte Ltd",
+    "invoice": "INV-505",
+    "sha256": "3362f46266e3704c9eeb125b358cbb1acc138c61ebf07bb84ac7646ddc7c6e54"
+  },
+  {
+    "path": "18-service-recovery/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1801",
+    "sha256": "f209cb389d5462809ae9aa02bdcfef503b161257008c8b5212c35cd3216958e7"
+  },
+  {
+    "path": "18-service-recovery/02-full-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1801",
+    "sha256": "fbaf089dc1ef5fbc7364e438ababd3dd09cddfb39e307ab61cd768e69c9b65ee"
+  },
+  {
+    "path": "19-budget-extension/01-invoice.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1901",
+    "sha256": "db5c5ec5cfbe748d8c2bbf4c39aaddc4f2ea1e8b1f8324c2e3a94c9f70fa0168"
+  },
+  {
+    "path": "19-budget-extension/02-full-receipt.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Alder Trade Supplies Pte Ltd",
+    "buyer": "Cedar Commercial Services Pte Ltd",
+    "invoice": "AT-2026-1901",
+    "sha256": "f67b7d08f596947e4a32364b19eeaef9db2af87a52f4926ce74567981c40aba2"
+  },
+  {
+    "path": "20-withdrawn-evidence/01-inv-303-v1.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Orchid Bay Garments Pte Ltd",
+    "buyer": "Lionstar Retail Pte Ltd",
+    "invoice": "INV-303",
+    "sha256": "cfa12ea740d7b385acdcc940f2a1129d28c57ad1c6dc07e049bdfc94eeb91837"
+  },
+  {
+    "path": "20-withdrawn-evidence/02-r1-303.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Orchid Bay Garments Pte Ltd",
+    "buyer": "Lionstar Retail Pte Ltd",
+    "invoice": "INV-303",
+    "sha256": "84603871ce7d22dbd78c235112c9ad939983116736c9d1f7c59638f451c8bc41"
+  },
+  {
+    "path": "20-withdrawn-evidence/03-r1-303-reissued.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Orchid Bay Garments Pte Ltd",
+    "buyer": "Lionstar Retail Pte Ltd",
+    "invoice": "INV-303",
+    "sha256": "e3cdebb638e8493c87c36247df2b994af29ac77a14276f970d3ada7ff3876582"
+  },
+  {
+    "path": "21-controlled-modes/01-inv-101-v1.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Harbour Lane Trading Pte Ltd",
+    "buyer": "Meridian Foods Pte Ltd",
+    "invoice": "INV-101",
+    "sha256": "be1b106fbd7678d10899d14d2eb5d0335710e6ff050bfb2139a99276a530098c"
+  },
+  {
+    "path": "21-controlled-modes/02-r1-d1.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Harbour Lane Trading Pte Ltd",
+    "buyer": "Meridian Foods Pte Ltd",
+    "invoice": "INV-101",
+    "sha256": "be2f2fbfd4e9c8a714a4bd830d03d6a35c6b9716689140cdd49bb4324a146ba4"
+  },
+  {
+    "path": "21-controlled-modes/03-r2-d2.pdf",
+    "kind": "receipt",
+    "purpose": "evidence",
+    "seller": "Harbour Lane Trading Pte Ltd",
+    "buyer": "Meridian Foods Pte Ltd",
+    "invoice": "INV-101",
+    "sha256": "8cea248789ea8d61569dff16b9e441832de978d4186714c1c85ad9c1d59a4a92"
+  },
+  {
+    "path": "21-controlled-modes/04-inv-101-v2.pdf",
+    "kind": "invoice",
+    "purpose": "evidence",
+    "seller": "Harbour Lane Trading Pte Ltd",
+    "buyer": "Meridian Foods Pte Ltd",
+    "invoice": "INV-101",
+    "sha256": "8cfad5fe67e354912905af44b418f91c2d7a1903290bba1046f746613c86ace0"
+  }
+]

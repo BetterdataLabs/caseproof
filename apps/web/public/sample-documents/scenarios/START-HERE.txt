@@ -1,0 +1,37 @@
+CASEPROOF | SCENARIO LIBRARY
+
+Sign in as Alex Chen. Start a NEW case for each scenario and use only that folder's files.
+
+One case is one sale. The seller issues the invoice; the buyer or a permitted logistics provider confirms receipt. Different letterheads do not mean different sales.
+
+Most scenarios use Your documents. Scenarios 17, 20 and 21 use the named Demo scenario so the clock, withdrawal and structured-response controls are available.
+
+Upload only the Start with files. Keep reference templates in the optional reference fields. Leave Written message blank unless the instructions provide wording.
+
+Wait for each agent run to settle. For a correction, select the exact earlier source under Replacing an earlier document?. For another delivery, select No - adding new evidence.
+
+Use the sample policy unless a scenario explicitly requires a published change. A case can correctly finish on hold or remain open when evidence is unsafe or unsupported. Document review never approves financing.
+
+01-clean-case: A correct invoice and full proof of delivery.
+02-invoice-correction: Fix the amount while retaining the original invoice in history.
+03-partial-delivery: Add proof of a second delivery without replacing the first receipt.
+04-duplicate-receipt: A repeated PDF must not turn one delivery into two.
+05-buyer-dispute: A written reply reopens a completed review and needs a human decision.
+06-dispatch-is-not-receipt: The seller's dispatch note is not the buyer's receipt acknowledgement.
+07-two-gaps: One request should cover both the wrong total and the missing delivery.
+08-cumulative-receipt: Replace a cumulative receipt with the quantity for that delivery alone.
+09-replacement-scope: Reject a changed quantity even when its multiplication is correct.
+10-delivery-explanation: A harmless explanation still receives a recorded human decision.
+11-unrelated-message: An administrative note does not become delivery evidence.
+12-untrusted-instructions: Ignore embedded requests to bypass checks or read another case.
+13-unsupported-tax: Tax and multiple lines are outside this sample checklist.
+14-matching-templates: Compare both seller and buyer layouts while allowing transaction values to differ.
+15-template-difference: A template mismatch is a review question, not proof of fraud.
+16-edited-identifier: Locate a covered identifier and keep the case on hold for issuer verification.
+17-no-response: Waiting consumes no model calls; a reviewer can authorise another request.
+18-service-recovery: A temporary model failure preserves work and opens a recovery task.
+19-budget-extension: Reaching an automation limit does not discard the case.
+20-withdrawn-evidence: Reopen only affected work and retain the superseded summary.
+21-controlled-modes: The same case obeys its selected action authority.
+
+Read each folder's README.txt for actions and expected results.

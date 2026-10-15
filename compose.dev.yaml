@@ -1,0 +1,70 @@
+services:
+  database:
+    ports:
+      - "127.0.0.1:56543:5432"
+
+  initialize:
+    volumes:
+      - ./services/backend/src:/app/services/backend/src:ro
+      - ./services/backend/migrations:/app/services/backend/migrations:ro
+      - ./policies:/app/policies:ro
+
+  api:
+    command:
+      - uvicorn
+      - caseproof.api.app:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --reload
+      - --reload-dir
+      - /app/services/backend/src
+    volumes:
+      - ./services/backend/src:/app/services/backend/src:ro
+      - ./policies:/app/policies:ro
+
+  worker:
+    command:
+      - uvicorn
+      - caseproof.worker:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --reload
+      - --reload-dir
+      - /app/services/backend/src
+    volumes:
+      - ./services/backend/src:/app/services/backend/src:ro
+      - ./policies:/app/policies:ro
+
+  dispatcher:
+    command:
+      - watchfiles
+      - --filter
+      - python
+      - python -m caseproof.dispatcher
+      - /app/services/backend/src
+    volumes:
+      - ./services/backend/src:/app/services/backend/src:ro
+      - ./policies:/app/policies:ro
+
+  web:
+    image: caseproof-demo-web-dev
+    build:
+      target: development
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./apps/web:/web
+      - web_dependencies:/web/node_modules
+      - web_dev_cache:/web/.next
+    healthcheck:
+      start_period: 60s
+      timeout: 15s
+
+volumes:
+  web_dependencies:
+  web_dev_cache:

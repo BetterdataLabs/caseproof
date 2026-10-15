@@ -1,0 +1,3413 @@
+{
+  "cases": {
+    "01-clean-case": {
+      "scenario": "01-clean-case",
+      "checked_at": "2026-10-13T11:25:55.836286+00:00",
+      "scenario_sha256": "9ad2cc8163748cf55c5df267a8e5cf7da87038a65bb9d31c98818845ac0cc0db",
+      "documents": {
+        "01-invoice.pdf": "e08926e85e6407cf8cb90e8dfbf8a9439a607061ec232f91ea7e5e787707a35c",
+        "02-full-receipt.pdf": "c6715cebddff6a057be8aeb136371feea755b8769970cbd2961e6af9532436c6"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 120 cartons \u00d7 SGD 18.50 = SGD 2,220.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries SP-DEL-1101 cover all 120 cartons."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 4,
+          "cost_usd": "0.0097"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 12.23
+    },
+    "02-invoice-correction": {
+      "scenario": "02-invoice-correction",
+      "checked_at": "2026-10-13T11:25:55.836768+00:00",
+      "scenario_sha256": "183dc75d830388bab92c185cc68764600d8d2bb49eeaa949e62e56844fa901f7",
+      "documents": {
+        "01-invoice-incorrect.pdf": "6c3b5219590e690c91c3fd92b1a103419d4f224fa606a1231da4ddb1a7414990",
+        "02-full-receipt.pdf": "a3e6f35b796fe0449b6f40987b382adf63f8aafc8c39b1d809eb486d381f178e",
+        "03-invoice-corrected-v2.pdf": "086d3915068cda6cf810223d8dced0819295bc07a41a283aaeedc75c81927c02"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "fail",
+              "reason_code": "TOTAL_MISMATCH",
+              "detail": "S1 states SGD 2,680.00 but 80 boxes \u00d7 SGD 32.50 = SGD 2,600.00 (difference SGD 80.00)."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries MO-DEL-2201 cover all 80 boxes."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 6,
+          "cost_usd": "0.0150"
+        },
+        {
+          "step": "1: upload",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S3: 80 boxes \u00d7 SGD 32.50 = SGD 2,600.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries MO-DEL-2201 cover all 80 boxes."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "superseded",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 9,
+          "cost_usd": "0.0225"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 21.63
+    },
+    "03-partial-delivery": {
+      "scenario": "03-partial-delivery",
+      "checked_at": "2026-10-13T11:26:08.103042+00:00",
+      "scenario_sha256": "3a58250d4b38733a8ee8fe9d4998bd68e442d10dc87c9d1d0b562a86fd4c5a35",
+      "documents": {
+        "01-invoice.pdf": "fc3370a8ad494b432c31fafc24095e06d1e3df608069a055738e3b73c399daea",
+        "02-first-delivery-120.pdf": "290e68c09aebb4eaa3981423dd168737acd38ab2c1bd261165841099b622d6e2",
+        "03-second-delivery-80.pdf": "00ae0060d1cf30c01e1e75f25fc28573bfe3283fa1265f54d31b89901c68666e"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 200 packs \u00d7 SGD 12.75 = SGD 2,550.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 120 of 200 packs (HH-DEL-3301); 80 packs have no receipt."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 5,
+          "cost_usd": "0.0126"
+        },
+        {
+          "step": "1: upload",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 200 packs \u00d7 SGD 12.75 = SGD 2,550.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries HH-DEL-3301, HH-DEL-3302 cover all 200 packs."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 8,
+          "cost_usd": "0.0199"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 19.05
+    },
+    "04-duplicate-receipt": {
+      "scenario": "04-duplicate-receipt",
+      "checked_at": "2026-10-13T11:26:17.490580+00:00",
+      "scenario_sha256": "ed7639cfdd112942900a057495a9f095c8ff60c6d1b5028262e16117b653e867",
+      "documents": {
+        "01-invoice.pdf": "756c441bd730e26b7f7947ae2c0e3951eafa1778e2dc494752673e4d5b2a4ce4",
+        "02-first-receipt-60.pdf": "d7bef688493d234c3db63548a51d6cddd3d8891886ea836cdb589373078c10c8",
+        "03-copy-of-first-receipt.pdf": "d7bef688493d234c3db63548a51d6cddd3d8891886ea836cdb589373078c10c8",
+        "04-second-receipt-40.pdf": "de72dcce53bfccf889e4ddd9bd596ece6dfc76849f81ee5338dbda19e9dd5d82"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 24.00 = SGD 2,400.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 60 of 100 boxes (BS-DEL-4401); 40 boxes have no receipt."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 6,
+          "cost_usd": "0.0148"
+        },
+        {
+          "step": "1: upload",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 24.00 = SGD 2,400.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries BS-DEL-4401, BS-DEL-4402 cover all 100 boxes."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 9,
+          "cost_usd": "0.0229"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 24.15
+    },
+    "05-buyer-dispute": {
+      "scenario": "05-buyer-dispute",
+      "checked_at": "2026-10-13T11:26:27.180161+00:00",
+      "scenario_sha256": "312bdc656fee6feab2eef42d78568d13d69bb2f6e2694866a332fa35ca1743e9",
+      "documents": {
+        "01-invoice.pdf": "c1b89175afc98456987b5ff6d9f8a92612e5324d45f9966f418820eafee706fb",
+        "02-original-receipt-100.pdf": "25c1ac86b896b9b64887e89db1b19ff2fa892b246f485f991fcf3cd224a705e1",
+        "03-corrected-receipt-v2-80.pdf": "4b27c3d1bb0c667db45be0c1c530046cc16e0dcf63292dad0605540a57766198",
+        "04-later-delivery-20.pdf": "8cad475c972d04cafa36d8f532aac99627d8ceab4cddba3b6e886831aa8239de"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 crates \u00d7 SGD 45.00 = SGD 4,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AL-DEL-5501 cover all 100 crates."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 4,
+          "cost_usd": "0.0104"
+        },
+        {
+          "step": "1: reply",
+          "status": "needs_decision",
+          "execution": "waiting_decision",
+          "lifecycle": "open",
+          "next_action": "Needs a decision: Dispute on PD-GRN-5501: 80 crates physically received vs 100 crates on receipt",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 crates \u00d7 SGD 45.00 = SGD 4,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AL-DEL-5501 cover all 100 crates."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "dispute",
+              "state": "pending",
+              "title": "Dispute on PD-GRN-5501: 80 crates physically received vs 100 crates on receipt"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "written_message",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 7,
+          "cost_usd": "0.0192"
+        },
+        {
+          "step": "2: decision",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 crates \u00d7 SGD 45.00 = SGD 4,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "blocked",
+              "reason_code": "DISPUTE_RETAINED",
+              "detail": "A retained dispute says delivery AL-DEL-5501 had 80 crates, not what PD-GRN-5501 v1 states. Awaiting a corrected receipt that explicitly replaces it."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "dispute",
+              "state": "decided",
+              "title": "Dispute on PD-GRN-5501: 80 crates physically received vs 100 crates on receipt"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "written_message",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 10,
+          "cost_usd": "0.0276"
+        },
+        {
+          "step": "3: upload",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 crates \u00d7 SGD 45.00 = SGD 4,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 80 of 100 crates (AL-DEL-5501); 20 crates have no receipt."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "dispute",
+              "state": "decided",
+              "title": "Dispute on PD-GRN-5501: 80 crates physically received vs 100 crates on receipt"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "superseded",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S4",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "written_message",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 12,
+          "cost_usd": "0.0342"
+        },
+        {
+          "step": "4: upload",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 crates \u00d7 SGD 45.00 = SGD 4,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AL-DEL-5501, AL-DEL-5502 cover all 100 crates."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "dispute",
+              "state": "decided",
+              "title": "Dispute on PD-GRN-5501: 80 crates physically received vs 100 crates on receipt"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "superseded",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S4",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "written_message",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S5",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 15,
+          "cost_usd": "0.0423"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 42.08
+    },
+    "06-dispatch-is-not-receipt": {
+      "scenario": "06-dispatch-is-not-receipt",
+      "checked_at": "2026-10-13T11:34:54.515358+00:00",
+      "scenario_sha256": "14a6c4fa37e49bfec10a35d13fd04e25710f5bbf4cef4a93e2163dd0b327d9e2",
+      "documents": {
+        "01-invoice.pdf": "b8e5f617d41af7b8be49a16b8822464f29cb610a9754cb962a38aca716d25d79",
+        "02-seller-dispatch-note.pdf": "c3e4c109e4b809823a338c7df1f9ccc8acbeff891584c7c5cd41e596e8bf316a",
+        "03-buyer-receipt.pdf": "3ad04a54051f5c5dcb4580af98db65e0d8981b3c7a449e45b7c582772e8fe141"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 50 cartons \u00d7 SGD 43.00 = SGD 2,150.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 0 of 50 cartons (no deliveries); 50 cartons have no receipt. S2 could not be used."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "rejected",
+              "reject_code": "NEEDS_DOCUMENT_REVIEW",
+              "reject_detail": "Dispatch note without acknowledgement of receipt is unsupported.",
+              "visual_review": null
+            },
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 5,
+          "cost_usd": "0.0114"
+        },
+        {
+          "step": "1: upload",
+          "status": "needs_decision",
+          "execution": "waiting_decision",
+          "lifecycle": "open",
+          "next_action": "Needs a decision: Review unused rejected document: S2",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 50 cartons \u00d7 SGD 43.00 = SGD 2,150.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries LM-DEL-6601 cover all 50 cartons."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "document_rejection",
+              "state": "pending",
+              "title": "Review unused rejected document: S2"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "rejected",
+              "reject_code": "NEEDS_DOCUMENT_REVIEW",
+              "reject_detail": "Dispatch note without acknowledgement of receipt is unsupported.",
+              "visual_review": null
+            },
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 8,
+          "cost_usd": "0.0189"
+        },
+        {
+          "step": "2: decision",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 50 cartons \u00d7 SGD 43.00 = SGD 2,150.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries LM-DEL-6601 cover all 50 cartons."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "document_rejection",
+              "state": "decided",
+              "title": "Review unused rejected document: S2"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "rejected",
+              "reject_code": "NEEDS_DOCUMENT_REVIEW",
+              "reject_detail": "Dispatch note without acknowledgement of receipt is unsupported.",
+              "visual_review": null
+            },
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 9,
+          "cost_usd": "0.0213"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 19.81
+    },
+    "08-cumulative-receipt": {
+      "scenario": "08-cumulative-receipt",
+      "checked_at": "2026-10-13T12:10:53.022484+00:00",
+      "scenario_sha256": "d55d73092e0ebb84163ac941047ef494c2fd423f0a82059e11db7d889d7b4073",
+      "documents": {
+        "01-invoice.pdf": "f4d77f7e877245519f69e14d9b221ad72b7ebcddea93c2a49275c923ffa48672",
+        "02-first-receipt-60.pdf": "58685f7d7df7aab2a7d181a1995eea43211a553b3d184a2433af33d98efb0dbb",
+        "03-cumulative-receipt-100.pdf": "5c2a3dc52a056d007c44fbfa9eef3aa619ed076460edbe9ea3268e4ed4a1e712",
+        "04-corrected-receipt-v2-40.pdf": "490491e889f4115667f2027128860d99504fe59e9960dc3f1da56a2894ece23c"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "blocked",
+              "reason_code": "CUMULATIVE_RECEIPT",
+              "detail": "S3 (CC-GRN-0802) states a cumulative quantity to date. Quantities cannot be added without knowing which deliveries it includes; a corrected receipt or a source-backed disposition is required."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 7,
+          "cost_usd": "0.0182"
+        },
+        {
+          "step": "1: upload",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-0801, AT-DEL-0802 cover all 100 boxes."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "delivery_receipt",
+              "state": "superseded",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S4",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 10,
+          "cost_usd": "0.0257"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 26.85
+    },
+    "07-two-gaps": {
+      "scenario": "07-two-gaps",
+      "checked_at": "2026-10-13T11:27:09.295749+00:00",
+      "scenario_sha256": "e69b6dfae28960f77ae1d6e3673633a52cf376e510cac9d3c989f2c2be9b72de",
+      "documents": {
+        "01-invoice.pdf": "48888e856671498374972ddee7fd26b5ce96c5d9f6c76d1cd5748ee53aa78222",
+        "02-first-receipt-60.pdf": "087f8012684276209fb5cd4e64f50b24911b344c6a2254dde1bbc0a22f850ae5",
+        "03-corrected-invoice-v2.pdf": "e40c1cb15362d94875a959664d9c59cf6510c447bd52a8062de8a71c4240e2a8",
+        "04-balance-receipt-40.pdf": "36d3069f4df1f14b9d98570704a0c878a545356c6f6a19ddb4635ac252cda62b"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "fail",
+              "reason_code": "TOTAL_MISMATCH",
+              "detail": "S1 states SGD 2,600.00 but 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00 (difference SGD 100.00)."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 60 of 100 boxes (AT-DEL-0701); 40 boxes have no receipt."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 5,
+          "cost_usd": "0.0129"
+        },
+        {
+          "step": "1: upload",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S3: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 60 of 100 boxes (AT-DEL-0701); 40 boxes have no receipt."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "superseded",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 8,
+          "cost_usd": "0.0217"
+        },
+        {
+          "step": "2: upload",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S3: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-0701, AT-DEL-0702 cover all 100 boxes."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "superseded",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S4",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 11,
+          "cost_usd": "0.0301"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 29.89
+    },
+    "09-replacement-scope": {
+      "scenario": "09-replacement-scope",
+      "checked_at": "2026-10-13T11:37:39.776033+00:00",
+      "scenario_sha256": "d525ffb5f3b2b372d5d8fcb74a92b74913f61d83c24d191bafd4c8a5737239ae",
+      "documents": {
+        "01-invoice.pdf": "7c0b622519b70df583e58cb6acf47afbb5bb1d56a35052819dc2d0888a74f6d2",
+        "02-full-receipt.pdf": "fdd28dbcc6aa8f5bdb558a0c05dc797aa0cebe039d92460116bcec0ddc79b43b",
+        "03-invalid-quantity-change-v2.pdf": "5537d362abf4ee19ee4642a5401a2f18f81cc238bb445c47035cc6df9e2f8b21",
+        "04-amount-only-correction-v2.pdf": "238698d64eaa24c6308d51bc9e6b5ffd25d013056e9e0ef317dfa6ac6c7db7ba"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "fail",
+              "reason_code": "TOTAL_MISMATCH",
+              "detail": "S1 states SGD 2,600.00 but 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00 (difference SGD 100.00)."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-0901 cover all 100 boxes."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 6,
+          "cost_usd": "0.0161"
+        },
+        {
+          "step": "1: upload",
+          "status": "needs_decision",
+          "execution": "waiting_decision",
+          "lifecycle": "open",
+          "next_action": "Needs a decision: A replacement changes fields outside the policy",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "fail",
+              "reason_code": "REPLACEMENT_REJECTED",
+              "detail": "S1 states SGD 2,600.00 but 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00. Replacement S3 was not accepted: AT-2026-0901 v2 also changes quantity, which a replacement may not change automatically."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-0901 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "evidence_problem",
+              "state": "pending",
+              "title": "A replacement changes fields outside the policy"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "invoice",
+              "state": "rejected",
+              "reject_code": "REPLACEMENT_SCOPE",
+              "reject_detail": "AT-2026-0901 v2 also changes quantity, which a replacement may not change automatically.",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 8,
+          "cost_usd": "0.0215"
+        },
+        {
+          "step": "2: decision",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "fail",
+              "reason_code": "REPLACEMENT_REJECTED",
+              "detail": "S1 states SGD 2,600.00 but 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00. Replacement S3 was not accepted: AT-2026-0901 v2 also changes quantity, which a replacement may not change automatically."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-0901 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "evidence_problem",
+              "state": "decided",
+              "title": "A replacement changes fields outside the policy"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "invoice",
+              "state": "rejected",
+              "reject_code": "REPLACEMENT_SCOPE",
+              "reject_detail": "AT-2026-0901 v2 also changes quantity, which a replacement may not change automatically.",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 11,
+          "cost_usd": "0.0298"
+        },
+        {
+          "step": "3: upload",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S4: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-0901 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "evidence_problem",
+              "state": "decided",
+              "title": "A replacement changes fields outside the policy"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "superseded",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "invoice",
+              "state": "rejected",
+              "reject_code": "REPLACEMENT_SCOPE",
+              "reject_detail": "AT-2026-0901 v2 also changes quantity, which a replacement may not change automatically.",
+              "visual_review": null
+            },
+            {
+              "label": "S4",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 14,
+          "cost_usd": "0.0379"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 49.14
+    },
+    "10-delivery-explanation": {
+      "scenario": "10-delivery-explanation",
+      "checked_at": "2026-10-13T11:27:39.217495+00:00",
+      "scenario_sha256": "b0e0e8a9640ecd5c9784d3a471fe0207f92b63ebf45ac8a7b2d2c179a309b69f",
+      "documents": {
+        "01-invoice.pdf": "f567af19961f4abfa0be332ea07d89764134f1d075f29cdc9e12ad5e82a59f4b",
+        "02-full-receipt.pdf": "7589d7fd190b533c69537b153b73e12cbf93eaa5aa42ffd18b729d03f57ba6ca"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "needs_decision",
+          "execution": "waiting_decision",
+          "lifecycle": "open",
+          "next_action": "Needs a decision: Review buyer delivery confirmation message S3",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-1001 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "message_review",
+              "state": "pending",
+              "title": "Review buyer delivery confirmation message S3"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S3",
+              "role": "written_message",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 6,
+          "cost_usd": "0.0172"
+        },
+        {
+          "step": "1: decision",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-1001 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "message_review",
+              "state": "decided",
+              "title": "Review buyer delivery confirmation message S3"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S3",
+              "role": "written_message",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 7,
+          "cost_usd": "0.0200"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 24.24
+    },
+    "11-unrelated-message": {
+      "scenario": "11-unrelated-message",
+      "checked_at": "2026-10-13T11:27:50.053449+00:00",
+      "scenario_sha256": "223acf4c3f7e1bc45cfd63d7db3fa4eea07ff55b13a946f3f22b27fd209ed572",
+      "documents": {
+        "01-invoice.pdf": "6ff98c4ea401f3281ae869550e7467e7eb117ee09a9f3c2d032b6d2bfc5c8198",
+        "02-full-receipt.pdf": "150cdf785207f38cacb8127c69a27ef0ab28bd73c086d1859eb642eef3a4d5a8"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "needs_decision",
+          "execution": "waiting_decision",
+          "lifecycle": "open",
+          "next_action": "Needs a decision: Review customer message S3 regarding accounts contact leave",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-1101 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "message_review",
+              "state": "pending",
+              "title": "Review customer message S3 regarding accounts contact leave"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S3",
+              "role": "written_message",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 6,
+          "cost_usd": "0.0155"
+        },
+        {
+          "step": "1: decision",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-1101 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "message_review",
+              "state": "decided",
+              "title": "Review customer message S3 regarding accounts contact leave"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S3",
+              "role": "written_message",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 7,
+          "cost_usd": "0.0178"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 19.27
+    },
+    "13-unsupported-tax": {
+      "scenario": "13-unsupported-tax",
+      "checked_at": "2026-10-13T11:28:09.354461+00:00",
+      "scenario_sha256": "4f010d9332d14cbf5570579859e5c1a41c1b58dd8eca6abe687955ca7191ee40",
+      "documents": {
+        "01-invoice.pdf": "21f2c3c69a8f22cd71f7211be99488136d6f7958746c37ec2f7a14dcc1309cc8",
+        "02-full-receipt.pdf": "699868a1caaabd9d975fb57863c6a52e594e23cb93bc5b31263ff4af93c12a85"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "missing",
+              "reason_code": "NO_SUPPORTED_INVOICE",
+              "detail": "S1 could not be used: Multiple lines and tax present"
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "blocked",
+              "reason_code": "INVOICE_REQUIRED",
+              "detail": "Delivery cannot be checked without a supported invoice."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "rejected",
+              "reject_code": "NEEDS_DOCUMENT_REVIEW",
+              "reject_detail": "Multiple lines and tax present",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "rejected",
+              "reject_code": "INVOICE_NOT_READ",
+              "reject_detail": "Upload a readable invoice first; this receipt will then be checked again.",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 5,
+          "cost_usd": "0.0119"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 11.92
+    },
+    "12-untrusted-instructions": {
+      "scenario": "12-untrusted-instructions",
+      "checked_at": "2026-10-13T11:28:03.484571+00:00",
+      "scenario_sha256": "baba75eba0c474ef7b298bd759ad4085c2290efd41558e111d5523127f9e5724",
+      "documents": {
+        "01-invoice.pdf": "8b2e0f19112cc7ba9409796f97a8c1a1ea28eb22d96c9cfc780c61e1f3f1eccc",
+        "02-full-receipt.pdf": "a5a06062c098cdd4933ef0c033afeced39552260e84497b98bd5758de652e587"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "needs_decision",
+          "execution": "waiting_decision",
+          "lifecycle": "open",
+          "next_action": "Needs a decision: Review message S3 containing prompt injection instructions",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-1201 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "message_review",
+              "state": "pending",
+              "title": "Review message S3 containing prompt injection instructions"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S3",
+              "role": "written_message",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 6,
+          "cost_usd": "0.0152"
+        },
+        {
+          "step": "1: decision",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-1201 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "message_review",
+              "state": "decided",
+              "title": "Review message S3 containing prompt injection instructions"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S3",
+              "role": "written_message",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 7,
+          "cost_usd": "0.0179"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 19.73
+    },
+    "14-matching-templates": {
+      "scenario": "14-matching-templates",
+      "checked_at": "2026-10-13T11:28:21.295406+00:00",
+      "scenario_sha256": "00e579232bde90152bbda41b90cf9cf79680d4bfe1c56983a51f100b1a0e8680",
+      "documents": {
+        "01-invoice.pdf": "741887a7377dd239cc3f119d4ef867f218ae93be2d91b1d71401cbcc85bd3905",
+        "02-full-receipt.pdf": "2db687eeae8cfa08656ab3b6ecd03cc76fc829b0a357a2e5f5bd6995400ccc89",
+        "reference-invoice.pdf": "b98a74654700ab9b7a2a884eb7621eadc95f3c1edf4f32a37495ddecc3034e37",
+        "reference-receipt.pdf": "106c44a15d83db0655b74274749f2643e4b6c69aa22a4b2ec945d159db094139"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-1401 cover all 100 boxes."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": {
+                "model": "gemini-3.8-flash",
+                "status": "no_findings",
+                "summary": "The uploaded document layout, fonts, letterhead, and structure match the reference template precisely. Differences are limited to the invoice reference number (AT-2026-1401 vs AT-2026-0401), which is consistently updated across all references without signs of digital manipulation or tampering.",
+                "findings": [],
+                "template": "aligned",
+                "tampering": "no_obvious_signs",
+                "checked_at": "2026-10-13T11:28:32.144666+00:00",
+                "limitation": "Appearance checks can miss well-made alterations and can flag legitimate edits. They do not authenticate the issuer, validate digital signatures or prove absence of fraud.",
+                "page_count": 1,
+                "template_name": "reference-invoice.pdf",
+                "pages_examined": 1,
+                "template_sha256": "b98a74654700ab9b7a2a884eb7621eadc95f3c1edf4f32a37495ddecc3034e37",
+                "template_requested": true,
+                "tampering_requested": true
+              }
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": {
+                "model": "gemini-3.8-flash",
+                "status": "no_findings",
+                "summary": "The uploaded document layout, fonts, letterhead, and table structure match the reference template precisely. Differences in reference numbers between the documents are normal transaction-level variations. No visible signs of tampering or alterations were observed.",
+                "findings": [],
+                "template": "aligned",
+                "tampering": "no_obvious_signs",
+                "checked_at": "2026-10-13T11:28:35.187904+00:00",
+                "limitation": "Appearance checks can miss well-made alterations and can flag legitimate edits. They do not authenticate the issuer, validate digital signatures or prove absence of fraud.",
+                "page_count": 1,
+                "template_name": "reference-receipt.pdf",
+                "pages_examined": 1,
+                "template_sha256": "106c44a15d83db0655b74274749f2643e4b6c69aa22a4b2ec945d159db094139",
+                "template_requested": true,
+                "tampering_requested": true
+              }
+            }
+          ],
+          "model_calls": 6,
+          "cost_usd": "0.0192"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 17.2
+    },
+    "15-template-difference": {
+      "scenario": "15-template-difference",
+      "checked_at": "2026-10-13T11:28:23.243248+00:00",
+      "scenario_sha256": "d04f2f54b1e70de31a53bea2e23d284c1d215ca338d958c0aa5ea4f4434f2ac3",
+      "documents": {
+        "01-invoice.pdf": "e0706f079fd329bca6ca80e8168bd1eb987bbba3e9c167c19d32ef978cfbcdc0",
+        "02-full-receipt.pdf": "e2cbf998e53d271883b76c864fb7f3be72b0a0065f561e872239df92b9c0ef05",
+        "reference-invoice.pdf": "8ecf1f7d7062742c0525d940ca3b82515fca690ff8bec8a48f82ac5d6f85d7c3"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "needs_decision",
+          "execution": "waiting_decision",
+          "lifecycle": "open",
+          "next_action": "Needs a decision: Review document appearance: S1",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-1501 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "document_review",
+              "state": "pending",
+              "title": "Review document appearance: S1"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": {
+                "model": "gemini-3.8-flash",
+                "status": "review_required",
+                "summary": "The uploaded invoice exhibits a completely different layout and visual structure compared to the bank's reference template for this issuer.",
+                "findings": [
+                  {
+                    "box": [
+                      0,
+                      0,
+                      1000,
+                      185
+                    ],
+                    "kind": "template_mismatch",
+                    "page": 1,
+                    "title": "Header layout and branding mismatch",
+                    "detail": "The uploaded document uses a full-width dark blue header band containing the title 'SALES INVOICE' and issuer details, whereas the reference template features a white background with a square 'AT' logo on the left and 'INVOICE' right-aligned.",
+                    "origin": "visual_model"
+                  },
+                  {
+                    "box": [
+                      70,
+                      435,
+                      930,
+                      689
+                    ],
+                    "kind": "template_mismatch",
+                    "page": 1,
+                    "title": "Table design and data structure mismatch",
+                    "detail": "The uploaded document uses a vertical key-value list under a green 'SUPPLY BREAKDOWN' header bar, whereas the reference template uses a standard tabular format with column headers ('ITEM / SKU', 'DESCRIPTION', 'QTY', 'UNIT', 'UNIT PRICE', 'AMOUNT').",
+                    "origin": "visual_model"
+                  },
+                  {
+                    "box": [
+                      70,
+                      780,
+                      930,
+                      843
+                    ],
+                    "kind": "template_mismatch",
+                    "page": 1,
+                    "title": "Missing signature and remittance sections",
+                    "detail": "The uploaded invoice omits the 'PAYMENT & REMITTANCE' section and the 'PREPARED BY' signature area present on the reference template.",
+                    "origin": "visual_model"
+                  }
+                ],
+                "template": "mismatch",
+                "tampering": "not_requested",
+                "checked_at": "2026-10-13T11:28:37.167154+00:00",
+                "limitation": "Appearance checks can miss well-made alterations and can flag legitimate edits. They do not authenticate the issuer, validate digital signatures or prove absence of fraud.",
+                "page_count": 1,
+                "template_name": "reference-invoice.pdf",
+                "pages_examined": 1,
+                "template_sha256": "8ecf1f7d7062742c0525d940ca3b82515fca690ff8bec8a48f82ac5d6f85d7c3",
+                "template_requested": true,
+                "tampering_requested": false
+              }
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 5,
+          "cost_usd": "0.0140"
+        },
+        {
+          "step": "1: decision",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-1501 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "document_review",
+              "state": "decided",
+              "title": "Review document appearance: S1"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": {
+                "model": "gemini-3.8-flash",
+                "status": "reviewed",
+                "summary": "The uploaded invoice exhibits a completely different layout and visual structure compared to the bank's reference template for this issuer.",
+                "findings": [
+                  {
+                    "box": [
+                      0,
+                      0,
+                      1000,
+                      185
+                    ],
+                    "kind": "template_mismatch",
+                    "page": 1,
+                    "title": "Header layout and branding mismatch",
+                    "detail": "The uploaded document uses a full-width dark blue header band containing the title 'SALES INVOICE' and issuer details, whereas the reference template features a white background with a square 'AT' logo on the left and 'INVOICE' right-aligned.",
+                    "origin": "visual_model"
+                  },
+                  {
+                    "box": [
+                      70,
+                      435,
+                      930,
+                      689
+                    ],
+                    "kind": "template_mismatch",
+                    "page": 1,
+                    "title": "Table design and data structure mismatch",
+                    "detail": "The uploaded document uses a vertical key-value list under a green 'SUPPLY BREAKDOWN' header bar, whereas the reference template uses a standard tabular format with column headers ('ITEM / SKU', 'DESCRIPTION', 'QTY', 'UNIT', 'UNIT PRICE', 'AMOUNT').",
+                    "origin": "visual_model"
+                  },
+                  {
+                    "box": [
+                      70,
+                      780,
+                      930,
+                      843
+                    ],
+                    "kind": "template_mismatch",
+                    "page": 1,
+                    "title": "Missing signature and remittance sections",
+                    "detail": "The uploaded invoice omits the 'PAYMENT & REMITTANCE' section and the 'PREPARED BY' signature area present on the reference template.",
+                    "origin": "visual_model"
+                  }
+                ],
+                "template": "mismatch",
+                "tampering": "not_requested",
+                "checked_at": "2026-10-13T11:28:37.167154+00:00",
+                "limitation": "Appearance checks can miss well-made alterations and can flag legitimate edits. They do not authenticate the issuer, validate digital signatures or prove absence of fraud.",
+                "page_count": 1,
+                "decision_id": "7408e36d-08d2-4f41-8790-29819e769f07",
+                "reviewed_at": "2026-10-13T11:28:40.409941+00:00",
+                "reviewed_by": "Scenario reviewer",
+                "review_reason": "Fictional test: the issuer confirmed its new form; transaction details are unchanged.",
+                "template_name": "reference-invoice.pdf",
+                "pages_examined": 1,
+                "template_sha256": "8ecf1f7d7062742c0525d940ca3b82515fca690ff8bec8a48f82ac5d6f85d7c3",
+                "template_requested": true,
+                "tampering_requested": false
+              }
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 6,
+          "cost_usd": "0.0163"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 19.12
+    },
+    "16-edited-identifier": {
+      "scenario": "16-edited-identifier",
+      "checked_at": "2026-10-13T11:28:38.524025+00:00",
+      "scenario_sha256": "d1f26a85240347bf766afcdbcc37bb693387418e53f356eb62a27df53fee83ef",
+      "documents": {
+        "01-invoice.pdf": "be07a0fd5405e7ae1d969efc35bbee23062df7587318ee41f23fbd1e031c8293",
+        "02-full-receipt.pdf": "8f3108672cc130cb5ebfa59bedf382d78976ef703aca0eb671465a8a33978213",
+        "reference-invoice.pdf": "e92d513eaa6a49701e63543811c03829062994532bb355b66722d52f95c820bc"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "needs_decision",
+          "execution": "waiting_decision",
+          "lifecycle": "open",
+          "next_action": "Needs a decision: Review document appearance: S1",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "missing",
+              "reason_code": "NO_SUPPORTED_INVOICE",
+              "detail": "S1 could not be used: Ambiguous invoice number: AT-2026-1591 AT-2026-1601 printed together under INVOICE header"
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "blocked",
+              "reason_code": "INVOICE_REQUIRED",
+              "detail": "Delivery cannot be checked without a supported invoice."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "document_review",
+              "state": "pending",
+              "title": "Review document appearance: S1"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "rejected",
+              "reject_code": "NEEDS_DOCUMENT_REVIEW",
+              "reject_detail": "Ambiguous invoice number: AT-2026-1591 AT-2026-1601 printed together under INVOICE header",
+              "visual_review": {
+                "model": "gemini-3.8-flash",
+                "status": "review_required",
+                "summary": "The PDF contains covered text with a different value in the same area. Review the highlighted region and verify the change with the issuer.",
+                "findings": [
+                  {
+                    "box": [
+                      821,
+                      92,
+                      926,
+                      101
+                    ],
+                    "kind": "possible_alteration",
+                    "page": 1,
+                    "title": "Covered text with a different value on top",
+                    "detail": "The PDF retains \u201cAT-2026-1591\u201d beneath a covering shape, with \u201cAT-2026-1601\u201d printed in the same area. This can occur during legitimate corrections as well as tampering; verify the change with the issuer.",
+                    "origin": "pdf_structure"
+                  },
+                  {
+                    "box": [
+                      820,
+                      88,
+                      930,
+                      105
+                    ],
+                    "kind": "possible_alteration",
+                    "page": 1,
+                    "title": "Overlaid invoice identifier",
+                    "detail": "PDF text object structures indicate that 'AT-2026-1591' is positioned directly beneath 'AT-2026-1601' in the invoice number field in the upper right corner, indicating a potential post-generation modification or overlay.",
+                    "origin": "visual_model"
+                  }
+                ],
+                "template": "not_requested",
+                "tampering": "suspicious",
+                "checked_at": "2026-10-13T11:28:48.353220+00:00",
+                "limitation": "Appearance checks can miss well-made alterations and can flag legitimate edits. They do not authenticate the issuer, validate digital signatures or prove absence of fraud.",
+                "page_count": 1,
+                "template_name": null,
+                "pages_examined": 1,
+                "template_sha256": null,
+                "template_requested": false,
+                "tampering_requested": true
+              }
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "rejected",
+              "reject_code": "INVOICE_NOT_READ",
+              "reject_detail": "Upload a readable invoice first; this receipt will then be checked again.",
+              "visual_review": {
+                "model": "gemini-3.8-flash",
+                "status": "no_findings",
+                "summary": "Tampering inspection of the single-page goods received note revealed no signs of digital alterations, font mismatches, or overlay artifacts. PDF text layout matches visual elements cleanly.",
+                "findings": [],
+                "template": "not_requested",
+                "tampering": "no_obvious_signs",
+                "checked_at": "2026-10-13T11:28:51.292261+00:00",
+                "limitation": "Appearance checks can miss well-made alterations and can flag legitimate edits. They do not authenticate the issuer, validate digital signatures or prove absence of fraud.",
+                "page_count": 1,
+                "template_name": null,
+                "pages_examined": 1,
+                "template_sha256": null,
+                "template_requested": false,
+                "tampering_requested": true
+              }
+            }
+          ],
+          "model_calls": 5,
+          "cost_usd": "0.0142"
+        },
+        {
+          "step": "1: decision",
+          "status": "paused",
+          "execution": "paused",
+          "lifecycle": "open",
+          "next_action": "On hold by Scenario reviewer: An overwritten identifier requires issuer verification and a newly issued original.",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "missing",
+              "reason_code": "NO_SUPPORTED_INVOICE",
+              "detail": "S1 could not be used: Ambiguous invoice number: AT-2026-1591 AT-2026-1601 printed together under INVOICE header"
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "blocked",
+              "reason_code": "INVOICE_REQUIRED",
+              "detail": "Delivery cannot be checked without a supported invoice."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "document_review",
+              "state": "decided",
+              "title": "Review document appearance: S1"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "rejected",
+              "reject_code": "NEEDS_DOCUMENT_REVIEW",
+              "reject_detail": "Ambiguous invoice number: AT-2026-1591 AT-2026-1601 printed together under INVOICE header",
+              "visual_review": {
+                "model": "gemini-3.8-flash",
+                "status": "review_required",
+                "summary": "The PDF contains covered text with a different value in the same area. Review the highlighted region and verify the change with the issuer.",
+                "findings": [
+                  {
+                    "box": [
+                      821,
+                      92,
+                      926,
+                      101
+                    ],
+                    "kind": "possible_alteration",
+                    "page": 1,
+                    "title": "Covered text with a different value on top",
+                    "detail": "The PDF retains \u201cAT-2026-1591\u201d beneath a covering shape, with \u201cAT-2026-1601\u201d printed in the same area. This can occur during legitimate corrections as well as tampering; verify the change with the issuer.",
+                    "origin": "pdf_structure"
+                  },
+                  {
+                    "box": [
+                      820,
+                      88,
+                      930,
+                      105
+                    ],
+                    "kind": "possible_alteration",
+                    "page": 1,
+                    "title": "Overlaid invoice identifier",
+                    "detail": "PDF text object structures indicate that 'AT-2026-1591' is positioned directly beneath 'AT-2026-1601' in the invoice number field in the upper right corner, indicating a potential post-generation modification or overlay.",
+                    "origin": "visual_model"
+                  }
+                ],
+                "template": "not_requested",
+                "tampering": "suspicious",
+                "checked_at": "2026-10-13T11:28:48.353220+00:00",
+                "limitation": "Appearance checks can miss well-made alterations and can flag legitimate edits. They do not authenticate the issuer, validate digital signatures or prove absence of fraud.",
+                "page_count": 1,
+                "template_name": null,
+                "pages_examined": 1,
+                "template_sha256": null,
+                "template_requested": false,
+                "tampering_requested": true
+              }
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "rejected",
+              "reject_code": "INVOICE_NOT_READ",
+              "reject_detail": "Upload a readable invoice first; this receipt will then be checked again.",
+              "visual_review": {
+                "model": "gemini-3.8-flash",
+                "status": "no_findings",
+                "summary": "Tampering inspection of the single-page goods received note revealed no signs of digital alterations, font mismatches, or overlay artifacts. PDF text layout matches visual elements cleanly.",
+                "findings": [],
+                "template": "not_requested",
+                "tampering": "no_obvious_signs",
+                "checked_at": "2026-10-13T11:28:51.292261+00:00",
+                "limitation": "Appearance checks can miss well-made alterations and can flag legitimate edits. They do not authenticate the issuer, validate digital signatures or prove absence of fraud.",
+                "page_count": 1,
+                "template_name": null,
+                "pages_examined": 1,
+                "template_sha256": null,
+                "template_requested": false,
+                "tampering_requested": true
+              }
+            }
+          ],
+          "model_calls": 5,
+          "cost_usd": "0.0142"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 14.64
+    },
+    "17-no-response": {
+      "scenario": "17-no-response",
+      "checked_at": "2026-10-13T12:10:53.023029+00:00",
+      "scenario_sha256": "ee0e625ae36b600836541b288b1cc35a548737d1c3ff4d7a7e673ca5ce075038",
+      "documents": {
+        "01-inv-505-v1.pdf": "9ada91abd398bf1ea18885f4c7a4a9e834e34da9bd59f5d4e5446a2ea04cc1ad",
+        "02-r1-505.pdf": "3362f46266e3704c9eeb125b358cbb1acc138c61ebf07bb84ac7646ddc7c6e54"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 240 crate \u00d7 SGD 32.00 = SGD 7,680.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 0 of 240 crate (no deliveries); 240 crate have no receipt."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 3,
+          "cost_usd": "0.0072"
+        },
+        {
+          "step": "1: clock",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reviewer stop point scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 240 crate \u00d7 SGD 32.00 = SGD 7,680.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 0 of 240 crate (no deliveries); 240 crate have no receipt."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 3,
+          "cost_usd": "0.0072"
+        },
+        {
+          "step": "2: clock",
+          "status": "needs_decision",
+          "execution": "waiting_decision",
+          "lifecycle": "open",
+          "next_action": "Needs a decision: No reply to request round 1",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 240 crate \u00d7 SGD 32.00 = SGD 7,680.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 0 of 240 crate (no deliveries); 240 crate have no receipt."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "no_response",
+              "state": "pending",
+              "title": "No reply to request round 1"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 3,
+          "cost_usd": "0.0072"
+        },
+        {
+          "step": "3: decision",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 240 crate \u00d7 SGD 32.00 = SGD 7,680.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 0 of 240 crate (no deliveries); 240 crate have no receipt."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "no_response",
+              "state": "decided",
+              "title": "No reply to request round 1"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 6,
+          "cost_usd": "0.0146"
+        },
+        {
+          "step": "4: staged",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 240 crate \u00d7 SGD 32.00 = SGD 7,680.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries D1 cover all 240 crate."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "no_response",
+              "state": "decided",
+              "title": "No reply to request round 1"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 8,
+          "cost_usd": "0.0195"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 15.28
+    },
+    "19-budget-extension": {
+      "scenario": "19-budget-extension",
+      "checked_at": "2026-10-13T11:28:57.525581+00:00",
+      "scenario_sha256": "f7ccb6788fe5c9eb596d5098603d0a018a12ec1e65ebf3aca71a58ee3d0c4b84",
+      "documents": {
+        "01-invoice.pdf": "db5c5ec5cfbe748d8c2bbf4c39aaddc4f2ea1e8b1f8324c2e3a94c9f70fa0168",
+        "02-full-receipt.pdf": "f67b7d08f596947e4a32364b19eeaef9db2af87a52f4926ce74567981c40aba2"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "paused",
+          "execution": "paused",
+          "lifecycle": "open",
+          "next_action": "Paused: The case used its 1 automatic wake-ups.",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-1901 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "budget_exhausted",
+              "state": "pending",
+              "title": "Automation allowance reached"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 2,
+          "cost_usd": "0.0062"
+        },
+        {
+          "step": "1: decision",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-1901 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "budget_exhausted",
+              "state": "decided",
+              "title": "Automation allowance reached"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 4,
+          "cost_usd": "0.0107"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 11.27
+    },
+    "18-service-recovery": {
+      "scenario": "18-service-recovery",
+      "checked_at": "2026-10-13T11:28:53.192234+00:00",
+      "scenario_sha256": "e7748c4318745ead66482aac449a9291d137054c43624ef5f1c73dd81cb707b6",
+      "documents": {
+        "01-invoice.pdf": "f209cb389d5462809ae9aa02bdcfef503b161257008c8b5212c35cd3216958e7",
+        "02-full-receipt.pdf": "fbaf089dc1ef5fbc7364e438ababd3dd09cddfb39e307ab61cd768e69c9b65ee"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "paused",
+          "execution": "paused",
+          "lifecycle": "open",
+          "next_action": "Paused: The model service is unavailable (INJECTED_TIMEOUT) after 3 attempt(s).",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pending",
+              "reason_code": "NOT_CHECKED",
+              "detail": ""
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pending",
+              "reason_code": "NOT_CHECKED",
+              "detail": ""
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "service_failure",
+              "state": "pending",
+              "title": "Model service unavailable"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "received",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "received",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 3,
+          "cost_usd": "0.0000"
+        },
+        {
+          "step": "1: clear_fault",
+          "status": "paused",
+          "execution": "paused",
+          "lifecycle": "open",
+          "next_action": "Paused: The model service is unavailable (INJECTED_TIMEOUT) after 3 attempt(s).",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pending",
+              "reason_code": "NOT_CHECKED",
+              "detail": ""
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pending",
+              "reason_code": "NOT_CHECKED",
+              "detail": ""
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "service_failure",
+              "state": "pending",
+              "title": "Model service unavailable"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "received",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "received",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 3,
+          "cost_usd": "0.0000"
+        },
+        {
+          "step": "2: decision",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 100 boxes \u00d7 SGD 25.00 = SGD 2,500.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries AT-DEL-1801 cover all 100 boxes."
+            }
+          ],
+          "tasks": [
+            {
+              "kind": "service_failure",
+              "state": "decided",
+              "title": "Model service unavailable"
+            }
+          ],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 7,
+          "cost_usd": "0.0097"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 19.44
+    },
+    "20-withdrawn-evidence": {
+      "scenario": "20-withdrawn-evidence",
+      "checked_at": "2026-10-13T11:29:08.825853+00:00",
+      "scenario_sha256": "cef30e20294c0bc4a599cc33b68de3b6b0740a04b3bcf4b2637209c169522dae",
+      "documents": {
+        "01-inv-303-v1.pdf": "cfa12ea740d7b385acdcc940f2a1129d28c57ad1c6dc07e049bdfc94eeb91837",
+        "02-r1-303.pdf": "84603871ce7d22dbd78c235112c9ad939983116736c9d1f7c59638f451c8bc41",
+        "03-r1-303-reissued.pdf": "e3cdebb638e8493c87c36247df2b994af29ac77a14276f970d3ada7ff3876582"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 50 carton \u00d7 SGD 120.00 = SGD 6,000.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries D1 cover all 50 carton."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 2,
+          "cost_usd": "0.0044"
+        },
+        {
+          "step": "1: staged",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 50 carton \u00d7 SGD 120.00 = SGD 6,000.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 0 of 50 carton (no deliveries); 50 carton have no receipt."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "withdrawn",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 5,
+          "cost_usd": "0.0115"
+        },
+        {
+          "step": "2: staged",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S1: 50 carton \u00d7 SGD 120.00 = SGD 6,000.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries D1 cover all 50 carton."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "withdrawn",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 7,
+          "cost_usd": "0.0163"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 12.41
+    },
+    "21-controlled-modes": {
+      "scenario": "21-controlled-modes",
+      "checked_at": "2026-10-13T11:29:12.664767+00:00",
+      "scenario_sha256": "ab3a4c00588c9ac33be0639408528750c74fc9585fd462d4d63881f481e0ec7a",
+      "documents": {
+        "01-inv-101-v1.pdf": "be1b106fbd7678d10899d14d2eb5d0335710e6ff050bfb2139a99276a530098c",
+        "02-r1-d1.pdf": "be2f2fbfd4e9c8a714a4bd830d03d6a35c6b9716689140cdd49bb4324a146ba4",
+        "03-r2-d2.pdf": "8cea248789ea8d61569dff16b9e441832de978d4186714c1c85ad9c1d59a4a92",
+        "04-inv-101-v2.pdf": "8cfad5fe67e354912905af44b418f91c2d7a1903290bba1046f746613c86ace0"
+      },
+      "model": "gemini-3.8-flash",
+      "checkpoints": [
+        {
+          "step": "initial",
+          "status": "manual",
+          "execution": "idle",
+          "lifecycle": "open",
+          "next_action": "Manual review: automation is off for this case",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "fail",
+              "reason_code": "TOTAL_MISMATCH",
+              "detail": "S1 states SGD 2,100.00 but 100 box \u00d7 SGD 20.00 = SGD 2,000.00 (difference SGD 100.00)."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 80 of 100 box (D1); 20 box have no receipt."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 0,
+          "cost_usd": "0.0000"
+        },
+        {
+          "step": "1: manual",
+          "status": "manual",
+          "execution": "idle",
+          "lifecycle": "open",
+          "next_action": "Manual review: automation is off for this case",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "fail",
+              "reason_code": "TOTAL_MISMATCH",
+              "detail": "S1 states SGD 2,100.00 but 100 box \u00d7 SGD 20.00 = SGD 2,000.00 (difference SGD 100.00)."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 80 of 100 box (D1); 20 box have no receipt."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 0,
+          "cost_usd": "0.0000"
+        },
+        {
+          "step": "2: mode",
+          "status": "idle",
+          "execution": "idle",
+          "lifecycle": "open",
+          "next_action": "Agent working",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "fail",
+              "reason_code": "TOTAL_MISMATCH",
+              "detail": "S1 states SGD 2,100.00 but 100 box \u00d7 SGD 20.00 = SGD 2,000.00 (difference SGD 100.00)."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 80 of 100 box (D1); 20 box have no receipt."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 6,
+          "cost_usd": "0.0169"
+        },
+        {
+          "step": "3: mode",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "fail",
+              "reason_code": "TOTAL_MISMATCH",
+              "detail": "S1 states SGD 2,100.00 but 100 box \u00d7 SGD 20.00 = SGD 2,000.00 (difference SGD 100.00)."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 80 of 100 box (D1); 20 box have no receipt."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 8,
+          "cost_usd": "0.0220"
+        },
+        {
+          "step": "4: staged",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "fail",
+              "reason_code": "TOTAL_MISMATCH",
+              "detail": "S1 states SGD 2,100.00 but 100 box \u00d7 SGD 20.00 = SGD 2,000.00 (difference SGD 100.00)."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "missing",
+              "reason_code": "RECEIPT_SHORTFALL",
+              "detail": "Distinct deliveries cover 80 of 100 box (D1); 20 box have no receipt."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "status_update",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 9,
+          "cost_usd": "0.0246"
+        },
+        {
+          "step": "5: staged",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "fail",
+              "reason_code": "TOTAL_MISMATCH",
+              "detail": "S1 states SGD 2,100.00 but 100 box \u00d7 SGD 20.00 = SGD 2,000.00 (difference SGD 100.00)."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries D1, D2 cover all 100 box."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "status_update",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S4",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 11,
+          "cost_usd": "0.0298"
+        },
+        {
+          "step": "6: staged",
+          "status": "waiting_customer",
+          "execution": "waiting_evidence",
+          "lifecycle": "open",
+          "next_action": "Waiting for the business to reply; reminder scheduled",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "fail",
+              "reason_code": "TOTAL_MISMATCH",
+              "detail": "S1 states SGD 2,100.00 but 100 box \u00d7 SGD 20.00 = SGD 2,000.00 (difference SGD 100.00)."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries D1, D2 cover all 100 box. 1 duplicate copy counted once."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "status_update",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S4",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S5",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "Identical copy of S4; it is retained but counted once.",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 12,
+          "cost_usd": "0.0325"
+        },
+        {
+          "step": "7: staged",
+          "status": "complete",
+          "execution": "idle",
+          "lifecycle": "complete",
+          "next_action": "Review summary ready for the bank's financing process",
+          "questions": [
+            {
+              "key": "invoice_total",
+              "check_result": "pass",
+              "reason_code": "TOTAL_AGREES",
+              "detail": "S6: 100 box \u00d7 SGD 20.00 = SGD 2,000.00, as stated."
+            },
+            {
+              "key": "delivery_receipts",
+              "check_result": "pass",
+              "reason_code": "FULL_RECEIPT",
+              "detail": "Distinct deliveries D1, D2 cover all 100 box. 1 duplicate copy counted once."
+            }
+          ],
+          "tasks": [],
+          "sources": [
+            {
+              "label": "S2",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S1",
+              "role": "invoice",
+              "state": "superseded",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S6",
+              "role": "invoice",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S3",
+              "role": "status_update",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S4",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "",
+              "visual_review": null
+            },
+            {
+              "label": "S5",
+              "role": "delivery_receipt",
+              "state": "ready",
+              "reject_code": null,
+              "reject_detail": "Identical copy of S4; it is retained but counted once.",
+              "visual_review": null
+            }
+          ],
+          "model_calls": 14,
+          "cost_usd": "0.0379"
+        }
+      ],
+      "passed": true,
+      "elapsed_seconds": 26.85
+    }
+  },
+  "description": "Functional checks of the downloadable PDFs and declared workflow checkpoints. This is not an accuracy benchmark."
+}

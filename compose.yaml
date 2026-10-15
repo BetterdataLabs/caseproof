@@ -1,0 +1,151 @@
+name: caseproof-demo
+
+x-backend: &backend
+  image: caseproof-demo-backend
+  build:
+    context: .
+    dockerfile: services/backend/Dockerfile
+  env_file: .env
+  init: true
+  restart: unless-stopped
+  environment: &backend-environment
+    CASEPROOF_ENVIRONMENT: development
+    CASEPROOF_DEV_IDENTITY: "true"
+    CASEPROOF_STORAGE_BACKEND: local
+    CASEPROOF_STORAGE_DIR: /app/.data/objects
+    CASEPROOF_QUEUE_BACKEND: local
+    CASEPROOF_WORKER_URL: http://worker:8080
+    CASEPROOF_DATABASE_URL: postgresql+psycopg://cp_app:cp_app_local@database:5432/caseproof
+    CASEPROOF_DISPATCHER_DATABASE_URL: postgresql+psycopg://cp_dispatcher:cp_dispatcher_local@database:5432/caseproof
+  volumes:
+    - objects:/app/.data/objects
+  depends_on:
+    database:
+      condition: service_healthy
+    initialize:
+      condition: service_completed_successfully
+
+services:
+  database:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cp_owner
+      POSTGRES_PASSWORD: cp_owner_local
+      POSTGRES_DB: caseproof
+    volumes:
+      - database:/var/lib/postgresql/data
+      - ./infra/local/init-roles.sql:/docker-entrypoint-initdb.d/10-roles.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cp_owner -d caseproof"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  initialize:
+    <<: *backend
+    user: "0:0"
+    restart: "no"
+    environment:
+      <<: *backend-environment
+      CASEPROOF_OWNER_DATABASE_URL: postgresql+psycopg://cp_owner:cp_owner_local@database:5432/caseproof
+    secrets:
+      - gcp_credentials
+    volumes:
+      - objects:/app/.data/objects
+      - credentials:/app/.credentials
+    depends_on:
+      database:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        install -d -o caseproof -g caseproof -m 0700 /app/.data/objects /app/.credentials
+        install -o caseproof -g caseproof -m 0400 /run/secrets/gcp_credentials /app/.credentials/google.json
+        exec runuser -u caseproof -- sh -ec 'alembic upgrade head && python -m caseproof.seed'
+
+  api:
+    <<: *backend
+    environment:
+      <<: *backend-environment
+      ROLE: api
+    ports:
+      - "127.0.0.1:3400:3400"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import json, urllib.request; assert json.load(urllib.request.urlopen('http://127.0.0.1:8080/v1/health', timeout=3))['status'] == 'ok'"
+      interval: 5s
+      timeout: 5s
+      start_period: 15s
+      retries: 12
+
+  worker:
+    <<: *backend
+    environment:
+      <<: *backend-environment
+      ROLE: worker
+      GOOGLE_APPLICATION_CREDENTIALS: /app/.credentials/google.json
+    volumes:
+      - objects:/app/.data/objects
+      - credentials:/app/.credentials:ro
+    stop_grace_period: 90s
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"
+      interval: 5s
+      timeout: 5s
+      start_period: 15s
+      retries: 12
+
+  dispatcher:
+    <<: *backend
+    environment:
+      <<: *backend-environment
+      ROLE: dispatcher
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+      worker:
+        condition: service_healthy
+
+  web:
+    image: caseproof-demo-web
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    init: true
+    restart: unless-stopped
+    # Keep persona authentication on loopback without exposing the API to the host.
+    network_mode: service:api
+    environment:
+      PORT: "3400"
+      CASEPROOF_API_URL: http://127.0.0.1:8080
+    depends_on:
+      api:
+        condition: service_healthy
+        restart: true
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3400/api/v1/health').then(async r => { if (!r.ok || (await r.json()).status !== 'ok') process.exit(1) }).catch(() => process.exit(1))"
+      interval: 5s
+      timeout: 5s
+      start_period: 15s
+      retries: 12
+
+volumes:
+  database:
+  objects:
+  credentials:
+
+secrets:
+  gcp_credentials:
+    file: ${GOOGLE_APPLICATION_CREDENTIALS:-./.data/gcloud/application_default_credentials.json}

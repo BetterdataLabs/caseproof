@@ -1,0 +1,188 @@
+[
+  {
+    "scenario": "01-clean-case",
+    "flows": [
+      "clean_completion"
+    ],
+    "entry": "upload",
+    "expected_final_result": "Review complete, with both checklist questions resolved. This completes document review; it does not approve financing."
+  },
+  {
+    "scenario": "02-invoice-correction",
+    "flows": [
+      "invoice_correction"
+    ],
+    "entry": "upload",
+    "expected_final_result": "The current invoice total is SGD 2,600.00, both checks pass, and the document review should complete."
+  },
+  {
+    "scenario": "03-partial-delivery",
+    "flows": [
+      "partial_delivery"
+    ],
+    "entry": "upload",
+    "expected_final_result": "200 of 200 packs are covered. Both receipts stay active and the document review should complete."
+  },
+  {
+    "scenario": "04-duplicate-receipt",
+    "flows": [
+      "duplicate_receipt"
+    ],
+    "entry": "upload",
+    "expected_final_result": "The extra copy never increases coverage. Only the new second delivery brings coverage to 100 and allows completion."
+  },
+  {
+    "scenario": "05-buyer-dispute",
+    "flows": [
+      "disputed_quantity",
+      "reopen_after_message"
+    ],
+    "entry": "upload",
+    "expected_final_result": "The old 100-crate receipt is superseded. The current evidence is 80 + 20 = 100 crates. Completion requires the human decision as well as matching documents."
+  },
+  {
+    "scenario": "06-dispatch-is-not-receipt",
+    "flows": [
+      "dispatch_not_receipt"
+    ],
+    "entry": "upload",
+    "expected_final_result": "The rejected dispatch note remains in history and counts toward no check. The buyer receipt covers all 50 cartons, and the recorded exclusion allows completion."
+  },
+  {
+    "scenario": "07-two-gaps",
+    "flows": [
+      "two_independent_gaps",
+      "combined_request"
+    ],
+    "entry": "upload",
+    "expected_final_result": "Document review completes with a retained summary."
+  },
+  {
+    "scenario": "08-cumulative-receipt",
+    "flows": [
+      "cumulative_receipt"
+    ],
+    "entry": "upload",
+    "expected_final_result": "Document review completes with a retained summary."
+  },
+  {
+    "scenario": "09-replacement-scope",
+    "flows": [
+      "replacement_scope",
+      "authorised_follow_up"
+    ],
+    "entry": "upload",
+    "expected_final_result": "Document review completes with a retained summary."
+  },
+  {
+    "scenario": "10-delivery-explanation",
+    "flows": [
+      "harmless_message"
+    ],
+    "entry": "upload",
+    "expected_final_result": "Document review completes with a retained summary."
+  },
+  {
+    "scenario": "11-unrelated-message",
+    "flows": [
+      "unrelated_message"
+    ],
+    "entry": "upload",
+    "expected_final_result": "Document review completes with a retained summary."
+  },
+  {
+    "scenario": "12-untrusted-instructions",
+    "flows": [
+      "untrusted_instructions"
+    ],
+    "entry": "upload",
+    "expected_final_result": "Document review completes with a retained summary."
+  },
+  {
+    "scenario": "13-unsupported-tax",
+    "flows": [
+      "unsupported_document",
+      "safe_hold"
+    ],
+    "entry": "upload",
+    "expected_final_result": "The review remains open. This is the correct safe outcome for a transaction outside the supported checklist."
+  },
+  {
+    "scenario": "14-matching-templates",
+    "flows": [
+      "template_alignment",
+      "tampering_no_findings"
+    ],
+    "entry": "upload",
+    "expected_final_result": "Document review completes with a retained summary."
+  },
+  {
+    "scenario": "15-template-difference",
+    "flows": [
+      "template_mismatch",
+      "appearance_acceptance"
+    ],
+    "entry": "upload",
+    "expected_final_result": "Document review completes with a retained summary."
+  },
+  {
+    "scenario": "16-edited-identifier",
+    "flows": [
+      "possible_tampering",
+      "appearance_hold"
+    ],
+    "entry": "upload",
+    "expected_final_result": "Paused on hold, with the suspect area and reviewer reason retained. The app must not declare the document authentic or approve financing."
+  },
+  {
+    "scenario": "17-no-response",
+    "flows": [
+      "reminder",
+      "no_response",
+      "extra_request_round"
+    ],
+    "entry": "demo",
+    "expected_final_result": "Document review completes with a retained summary."
+  },
+  {
+    "scenario": "18-service-recovery",
+    "flows": [
+      "service_failure",
+      "resume_saved_work"
+    ],
+    "entry": "upload",
+    "expected_final_result": "Document review completes with a retained summary."
+  },
+  {
+    "scenario": "19-budget-extension",
+    "flows": [
+      "budget_exhausted",
+      "supervisor_extension"
+    ],
+    "entry": "upload",
+    "expected_final_result": "Document review completes with a retained summary."
+  },
+  {
+    "scenario": "20-withdrawn-evidence",
+    "flows": [
+      "withdrawal",
+      "summary_supersession",
+      "permitted_logistics_issuer"
+    ],
+    "entry": "demo",
+    "expected_final_result": "Document review completes with a retained summary."
+  },
+  {
+    "scenario": "21-controlled-modes",
+    "flows": [
+      "off_mode",
+      "manual_fallback",
+      "shadow_mode",
+      "autonomous_mode",
+      "structured_dispatch_update",
+      "exact_replay"
+    ],
+    "entry": "demo",
+    "expected_final_result": "Document review completes with a retained summary."
+  }
+]
