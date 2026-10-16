@@ -37,6 +37,7 @@ from .models import (
     RequestItem,
     User,
 )
+from .policies import definition_for
 from .storage import object_store
 
 NAVY = colors.HexColor("#112d3c")
@@ -52,7 +53,7 @@ def _iso(v: Any) -> str | None:
 
 def build_snapshot(session: Session, case: Case) -> dict[str, Any]:
     policy = policy_of(session, case)
-    requirements = {r["key"]: r for r in policy.definition["requirements"]}
+    requirements = {r["key"]: r for r in definition_for(policy)["requirements"]}
     versions = (
         session.execute(
             select(DocumentVersion)
@@ -295,6 +296,25 @@ def render_pdf(export_ref: str, snapshot: dict[str, Any]) -> bytes:
             story.append(Paragraph(escape(assessment["detail"]), small))
             for citation in assessment.get("citations", []):
                 story.append(Paragraph(escape(f"{citation['source_label']}: {citation['quote']}"), small))
+            for calculation in assessment.get("calculations", []):
+                detail = (
+                    f"{calculation.get('result', '')} {calculation.get('unit', '')}"
+                    if calculation.get("status") == "calculated"
+                    else calculation.get("error", "Needs review")
+                )
+                if calculation.get("comparison"):
+                    detail += f"; compared with {calculation['expected_result']} {calculation.get('unit', '')}; {calculation['comparison']}; difference {calculation['difference']}"
+                prefix = "Previous version: " if calculation.get("usage") == "comparison_only" else ""
+                story.append(Paragraph(escape(f"{prefix}{calculation['description']}: {detail}"), small))
+            for change in assessment.get("changes", []):
+                story.append(
+                    Paragraph(
+                        escape(
+                            f"{change['original_source']} to {change['replacement_source']}: {change['summary']}"
+                        ),
+                        small,
+                    )
+                )
             if assessment.get("disposition"):
                 disposition = assessment["disposition"]
                 story.append(

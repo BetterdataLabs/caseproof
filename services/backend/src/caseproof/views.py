@@ -7,9 +7,10 @@ import uuid
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from .activity import review_activity
 from .actors import ROLE_ADMIN, ROLE_REVIEWER, ROLE_SIMULATION, ROLE_SUPERVISOR, Actor
 from .casework import case_primary_status, claims_of, completion_blockers, open_tasks, policy_of
 from .config import get_settings
@@ -35,7 +36,7 @@ from .models import (
     RequestItem,
     User,
 )
-from .policies import settings_for
+from .policies import definition_for, settings_for
 from .tasks import DECISION_LABELS
 
 
@@ -158,6 +159,99 @@ def list_cases(
     return {"items": page, "counts": counts, "next_cursor": next_cursor}
 
 
+def list_research(
+    session: Session,
+    actor: Actor,
+    *,
+    status: str,
+    query: str | None,
+    cursor: int,
+    limit: int,
+) -> dict[str, Any]:
+    """Browse saved research, including archived cases, without loading every full report."""
+    report = Case.credit_research
+    filters = [Case.org_id == actor.org_id, report["enabled"].as_boolean().is_(True)]
+    if query and query.strip():
+        fields = [
+            Case.reference,
+            Case.title,
+            Case.invoice_reference,
+            Case.seller["name"].astext,
+            Case.buyer["name"].astext,
+            report["subject"]["name"].astext,
+            report["subject"]["registration_number"].astext,
+        ]
+        filters.append(func.concat_ws(" ", *fields).icontains(query.strip(), autoescape=True))
+    research_status = func.coalesce(report["status"].astext, "pending")
+    counts = dict(
+        session.execute(select(research_status, func.count()).where(*filters).group_by(research_status)).all()
+    )
+    counts["all"] = sum(counts.values())
+    if status != "all":
+        filters.append(research_status == status)
+    cases = session.execute(
+        select(
+            Case.id,
+            Case.reference,
+            Case.title,
+            Case.seller,
+            Case.buyer,
+            Case.invoice_reference,
+            Case.lifecycle,
+            Case.updated_at,
+            Case.credit_research,
+        )
+        .where(*filters)
+        .order_by(Case.updated_at.desc(), Case.id.desc())
+        .offset(cursor)
+        .limit(limit + 1)
+    ).all()
+    items = []
+    for case in cases[:limit]:
+        saved = case.credit_research
+        searches = saved.get("searches", [])
+        items.append(
+            {
+                "id": str(case.id),
+                "reference": case.reference,
+                "title": case.title,
+                "seller": case.seller.get("name", ""),
+                "buyer": case.buyer.get("name", ""),
+                "invoice_reference": case.invoice_reference,
+                "lifecycle": case.lifecycle,
+                "updated_at": iso(case.updated_at),
+                "research": {
+                    **{
+                        key: saved[key]
+                        for key in (
+                            "enabled",
+                            "target",
+                            "subject",
+                            "country",
+                            "assessment",
+                            "summary",
+                            "error",
+                            "coverage",
+                            "completed_at",
+                            "requested_at",
+                        )
+                        if key in saved
+                    },
+                    "status": saved.get("status") or "pending",
+                    "search_count": len(searches),
+                    "source_count": len(
+                        {source["url"] for search in searches for source in search.get("sources", [])}
+                    ),
+                },
+            }
+        )
+    return {
+        "items": items,
+        "counts": counts,
+        "next_cursor": cursor + limit if len(cases) > limit else None,
+    }
+
+
 def _facts(session: Session, version_ids: list[uuid.UUID]) -> dict[uuid.UUID, list[dict[str, Any]]]:
     out: dict[uuid.UUID, list[dict[str, Any]]] = {v: [] for v in version_ids}
     if version_ids:
@@ -173,6 +267,14 @@ def _facts(session: Session, version_ids: list[uuid.UUID]) -> dict[uuid.UUID, li
 def version_json(
     v: DocumentVersion, facts: list[dict[str, Any]], labels: dict[uuid.UUID, str]
 ) -> dict[str, Any]:
+    indexed = ((v.structured or {}).get("extraction") or {}).get("facts", [])
+    groups = {
+        (f["field"], " ".join(f["value"].split()), " ".join(f["quote"].split()), f["page"]): f.get(
+            "group", ""
+        )
+        for f in indexed
+    }
+    facts = [{**f, "group": groups.get((f["field"], f["value"], f["quote"], f["page"]), "")} for f in facts]
     return {
         "id": str(v.id),
         "label": v.label,
@@ -197,9 +299,11 @@ def version_json(
         "attributed_to": v.attributed_to,
         "structured": v.structured,
         "visual_review": v.visual_review,
-        "text": v.text_content if v.source_role in ("written_message", "status_update") else None,
+        "text": v.text_content,
         "facts": facts,
-        "has_preview": v.mime == "application/pdf",
+        "has_preview": v.mime == "application/pdf"
+        or (v.mime or "").startswith("image/")
+        or bool((v.structured or {}).get("rendered_document")),
         "covered_by_decision_id": str(v.covered_by_decision_id) if v.covered_by_decision_id else None,
     }
 
@@ -230,7 +334,7 @@ def case_detail(session: Session, actor: Actor, case: Case) -> dict[str, Any]:
         | {d.actor_id for d in decisions.values()},
     )
     policy = policy_of(session, case)
-    requirements = {r["key"]: r for r in policy.definition["requirements"]}
+    requirements = {r["key"]: r for r in definition_for(policy)["requirements"]}
 
     versions = (
         session.execute(
@@ -248,6 +352,8 @@ def case_detail(session: Session, actor: Actor, case: Case) -> dict[str, Any]:
         select(Document).where(Document.case_id == case.id).order_by(Document.created_at)
     ).scalars():
         doc_versions = [version_json(v, facts[v.id], labels) for v in versions if v.document_id == doc.id]
+        if not doc_versions:
+            continue
         documents.append(
             {
                 "id": str(doc.id),
@@ -389,6 +495,7 @@ def case_detail(session: Session, actor: Actor, case: Case) -> dict[str, Any]:
                     "created_at": iso(a.created_at),
                 }
             )
+    activity = review_activity(session, case.id, run_rows, actions_by_run, versions)
     for r in run_rows:
         runs.append(
             {
@@ -411,6 +518,7 @@ def case_detail(session: Session, actor: Actor, case: Case) -> dict[str, Any]:
                 "started_at": iso(r.started_at),
                 "ended_at": iso(r.ended_at),
                 "actions": actions_by_run[r.id],
+                "activity": activity[r.id],
             }
         )
 

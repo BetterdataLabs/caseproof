@@ -3,6 +3,7 @@ FROM python:3.12-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /usr/local/bin/uv
 WORKDIR /app/services/backend
+RUN apt-get update && apt-get install -y --no-install-recommends libreoffice-writer fonts-liberation fonts-noto-core && rm -rf /var/lib/apt/lists/*
 COPY services/backend/pyproject.toml services/backend/uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY services/backend/src ./src

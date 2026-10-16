@@ -2,9 +2,8 @@ name: caseproof-demo
 
 x-backend: &backend
   image: caseproof-demo-backend
-  build:
-    context: .
-    dockerfile: services/backend/Dockerfile
+  # Build only on `api`. Compose 2.40 Bake races if several services export the same tag.
+  pull_policy: never
   env_file: .env
   init: true
   restart: unless-stopped
@@ -66,6 +65,9 @@ services:
 
   api:
     <<: *backend
+    build:
+      context: .
+      dockerfile: services/backend/Dockerfile
     environment:
       <<: *backend-environment
       ROLE: api

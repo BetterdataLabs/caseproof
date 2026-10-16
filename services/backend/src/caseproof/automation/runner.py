@@ -155,7 +155,7 @@ async def _run_agent_job(
     outcome, stop_reason, summary, failure = "no_action", "", "", None
     try:
         if await process_uploads(ctx):
-            summary = "Uploaded PDFs processed; review continues from the saved evidence."
+            summary = "Uploaded documents processed; review continues from the saved evidence."
         elif await process_visual_reviews(ctx):
             summary = "Optional document appearance checks saved; review continues."
         elif await process_policy_review(ctx):

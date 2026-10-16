@@ -10,30 +10,43 @@ from sqlalchemy import select
 from .catalog import sample_policy
 from .checks import CheckResult
 from .history import record
-from .models import DocumentVersion, HumanTask, PolicyVersion
+from .models import DocumentVersion, HumanTask, MaterialClaim, PolicyVersion
+from .review_defaults import LEGACY_DELIVERY_CRITERIA, LEGACY_INVOICE_CRITERIA, current_requirements
 
 REVIEW_DECISIONS = ["accept_policy_review", "authorise_request", "keep_on_hold"]
 
 
-def model_requirements(definition: dict) -> list[dict]:
+def model_requirements(definition: dict, *, all_requirements: bool = False) -> list[dict]:
+    if all_requirements:
+        return current_requirements(definition)
     core = {r["key"]: r for r in sample_policy()["requirements"]}
     return [
         r
         for r in definition["requirements"]
-        if r["key"] not in core or r["description"] != core[r["key"]]["description"]
+        if r["key"] not in core
+        or r["description"]
+        not in {core[r["key"]]["description"], LEGACY_INVOICE_CRITERIA, LEGACY_DELIVERY_CRITERIA}
     ]
 
 
 def review_input(session, case) -> dict:
     policy = session.get(PolicyVersion, case.policy_id)
-    requirements = model_requirements(policy.definition)
+    requirements = model_requirements(policy.definition, all_requirements=case.scenario_key == "uploaded")
     sources = []
-    for v in session.execute(
-        select(DocumentVersion).where(DocumentVersion.case_id == case.id).order_by(DocumentVersion.sequence)
-    ).scalars():
+    versions = list(
+        session.execute(
+            select(DocumentVersion)
+            .where(DocumentVersion.case_id == case.id)
+            .order_by(DocumentVersion.sequence)
+        ).scalars()
+    )
+    current_documents = {v.document_id for v in versions if v.is_active}
+    for v in versions:
+        historical = v.state == "superseded" and v.document_id in current_documents
         if (
             v.source_role not in {"invoice", "delivery_receipt"}
-            or v.state in {"superseded", "withdrawn"}
+            or v.state == "withdrawn"
+            or (v.state == "superseded" and not historical)
             or v.duplicate_of_id
             or v.coverage == "not_required"
         ):
@@ -47,11 +60,45 @@ def review_input(session, case) -> dict:
                 "sha256": v.sha256,
                 "state": v.state,
                 "active": v.is_active,
+                "usage": "comparison_only" if historical else "current_evidence",
                 "text": v.text_content or "",
                 "limitation": v.reject_detail or "",
+                "pages": ((v.structured or {}).get("extraction") or {}).get("pages", []),
+                "reading_limitations": ((v.structured or {}).get("extraction") or {}).get("limitations", []),
+                "document_type": ((v.structured or {}).get("extraction") or {}).get(
+                    "document_type", v.source_role
+                ),
+                "replaces_version": v.replaces_version_no,
+                "version": v.version_no,
+                "replaces_source_id": next(
+                    (
+                        str(old.id)
+                        for old in versions
+                        if old.document_id == v.document_id
+                        and old.version_no == v.replaces_version_no
+                        and old.state == "superseded"
+                    ),
+                    None,
+                ),
+                "document_id": str(v.document_id),
             }
         )
     payload = {
+        "review_engine": "document-review/4" if case.scenario_key == "uploaded" else "policy-review/1",
+        "llm_core": case.scenario_key == "uploaded",
+        "retained_claims": [
+            {
+                "id": str(c.id),
+                "requirement_key": c.requirement_key,
+                "statement": c.statement,
+                "conditions": c.conditions,
+            }
+            for c in session.execute(
+                select(MaterialClaim).where(
+                    MaterialClaim.case_id == case.id, MaterialClaim.status.in_(("retained", "satisfied"))
+                )
+            ).scalars()
+        ],
         "policy_id": str(policy.id),
         "policy_version": policy.version,
         "requirements": requirements,
@@ -96,6 +143,8 @@ def combine_checks(session, case, results: dict[str, CheckResult]) -> dict[str, 
             ),
             "citations": (finding or {}).get("citations", []),
             "disposition": disposition,
+            "calculations": (finding or {}).get("calculations", []),
+            "changes": (finding or {}).get("changes", []),
         }
         check = results.get(key)
         if check:
@@ -113,7 +162,7 @@ def combine_checks(session, case, results: dict[str, CheckResult]) -> dict[str, 
             detail,
             list(dict.fromkeys([*(check.evidence_refs if check else []), *refs])),
             {**(check.metrics if check else {}), "policy_assessment": assessment},
-            check.satisfied_claims if check else [],
+            check.satisfied_claims if check else (finding or {}).get("satisfied_claims", []),
         )
     return results
 

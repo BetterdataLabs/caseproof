@@ -1,8 +1,12 @@
-# Local configuration and credentials
+# Local configuration and credentials — never commit or push these.
 .env
+**/.env
 .env.*
+**/.env.*
 !.env.example
+!**/.env.example
 !.env.*.example
+!**/.env.*.example
 *.pem
 *.key
 /compose.override.yaml

@@ -2,7 +2,7 @@
 
 Enable **Include company credit research** when Alex starts an uploaded case or Sam submits documents. Choose the buyer (default: the company owing the invoice) or seller, enter its country of registration, and optionally a registration number. The company name comes from the invoice; the option applies to that case only. Prepared demo cases are fictional and do not offer this option.
 
-Alex and Aisha see the report in the bank case view. Sam sees progress on their own submission, without the bank’s analysis. The completed document review’s PDF and JSON include the research result, including failures or insufficient evidence. Research does not approve financing or change the document checklist.
+Alex and Aisha can browse all saved reports on the **Research** page, search by company, case or invoice, and filter by research status. Select a case to read its findings, cited sources, search queries and supporting passages. Pending, failed and archived cases remain available, and new results appear automatically. Each report is also available in the bank case view. Sam sees progress on their own submission, without the bank’s analysis. The completed document review’s PDF and JSON include the research result, including failures or insufficient evidence. Research does not approve financing or change the document checklist.
 
 ## What runs
 
@@ -38,6 +38,8 @@ A 0–100 credit score or probability of default would require a defined credit 
 Uses `google-genai` with `Tool(google_search=GoogleSearch())` on the configured Vertex model, currently `gemini-3.8-flash`. Existing Application Default Credentials and Vertex project configuration apply. The rule controller does not simulate live search results; an unavailable provider produces a visible failed research result.
 
 Google’s Gemini 3 pricing page, checked 13 October 2026, lists 5,000 search queries per month at no charge across Gemini 3 models and USD 14 per 1,000 additional queries. Model token charges apply separately. Availability and pricing depend on the project and current Google terms; no free allowance is assumed by the app.
+
+Enabling research adds a one-time **USD 1.00 allowance** to the case's document-review budget (USD 1.50 total with the default USD 0.50 policy). `CASEPROOF_RESEARCH_BUDGET_USD` controls this additional allowance, with a minimum of USD 1.00. Older failed research requests receive the allowance on retry; repeated retries do not add it again. The allocation is recorded in case history. Search and synthesis calls can take up to 45 seconds within the existing invocation deadline.
 
 `CASEPROOF_SEARCH_PRICE_PER_QUERY` defaults to `0.014`. `CASEPROOF_SEARCH_RESERVE_QUERIES` defaults to `10` per grounded call. The gateway reserves this allowance plus model tokens against case and daily budgets, then estimates search spend from returned query metadata. Missing metadata retains the query allowance. Unknown model usage retains the full reservation. The UI identifies the combined figure as estimated AI and search spend. Google does not expose a per-call query cap here: this allowance is not a hard bound on provider billing, and returned query metadata is not a billing statement. Set project quotas and billing controls for production use.
 

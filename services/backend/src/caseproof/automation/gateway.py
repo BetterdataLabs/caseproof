@@ -269,6 +269,7 @@ async def guarded_call(
     *,
     search: bool = False,
     output_tokens: int | None = None,
+    timeout_s: float | None = None,
 ):
     """Run `call()` (an awaitable factory) under reservation, deadline and bounded transient retries."""
     s = get_settings()
@@ -280,7 +281,7 @@ async def guarded_call(
             fault = injected_fault(ctx)
             if fault:
                 raise TransientModelError("INJECTED_TIMEOUT" if fault == "timeout" else "INJECTED_QUOTA")
-            timeout = max(1.0, min(s.model_timeout_s, ctx.time_left() - 1))
+            timeout = max(1.0, min(timeout_s or s.model_timeout_s, ctx.time_left() - 1))
             async with asyncio.timeout(timeout):
                 response, usage = await call()
             settle(
@@ -328,6 +329,7 @@ async def generate_json(
     *,
     images: list[bytes] | None = None,
     output_tokens: int | None = None,
+    timeout_s: float | None = None,
 ) -> Any:
     """Nested structured call (e.g. compare_statements) through the same gateway and allowances."""
     s = get_settings()
@@ -342,6 +344,11 @@ async def generate_json(
     )
 
     async def call():
+        # Keep the provider's deadline aligned with the remaining invocation time.
+        # A larger local timeout alone still leaves the SDK's default deadline in force.
+        if timeout_s is not None:
+            remaining = max(1.0, min(timeout_s, ctx.time_left() - 1))
+            config.http_options = types.HttpOptions(timeout=int(remaining * 1000))
         response = await client.aio.models.generate_content(
             model=s.model_name,
             contents=types.Content(
@@ -361,6 +368,7 @@ async def generate_json(
         estimate_tokens(len(system) + len(prompt)) + 2048 * len(images or []),
         call,
         output_tokens=output_tokens,
+        timeout_s=timeout_s,
     )
 
 
@@ -374,6 +382,8 @@ def search_query_count(response: Any) -> int:
 async def generate_grounded(ctx: RunContext, system: str, prompt: str) -> Any:
     s = get_settings()
     client = vertex_client()
+    timeout_s = 45.0
+    output_tokens = 4096
 
     async def call():
         response = await client.aio.models.generate_content(
@@ -382,7 +392,10 @@ async def generate_grounded(ctx: RunContext, system: str, prompt: str) -> Any:
             config=types.GenerateContentConfig(
                 system_instruction=system,
                 tools=[types.Tool(google_search=types.GoogleSearch())],
-                max_output_tokens=s.max_output_tokens,
+                max_output_tokens=output_tokens,
+                http_options=types.HttpOptions(
+                    timeout=int(max(1.0, min(timeout_s, ctx.time_left() - 1)) * 1000)
+                ),
                 temperature=1,
                 thinking_config=types.ThinkingConfig(thinking_level=s.thinking_level),
                 automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
@@ -391,5 +404,11 @@ async def generate_grounded(ctx: RunContext, system: str, prompt: str) -> Any:
         return response, response.usage_metadata
 
     return await guarded_call(
-        ctx, "credit_public_search", estimate_tokens(len(system) + len(prompt)), call, search=True
+        ctx,
+        "credit_public_search",
+        estimate_tokens(len(system) + len(prompt)),
+        call,
+        search=True,
+        output_tokens=output_tokens,
+        timeout_s=timeout_s,
     )

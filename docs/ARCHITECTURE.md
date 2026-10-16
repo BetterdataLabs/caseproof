@@ -69,16 +69,16 @@ The agent can request evidence and propose review work. It cannot approve financ
 
 ## Evidence rules
 
-- Invoice totals use decimal arithmetic. The core checklist covers one goods line in SGD without tax or other charges.
-- Receipts must match the invoice, goods, units, supplier and permitted receiving organisation.
+- Uploaded invoices are interpreted by Gemini across all line items, quantities, currencies and adjustments. Source-grounded calculation plans run through an exact decimal calculator before the final assessment.
+- Receipt evidence is matched to invoices by meaning and supporting references, including partial and cumulative deliveries and evidenced unit conversions.
 - A delivery reference identifies an event. Repeated copies of that event do not add quantity.
-- A replacement must identify the earlier version, retain the permitted issuer and change only fields allowed by the policy.
+- An uploaded correction explicitly selects the source it replaces. Originals remain in history; the model assesses transaction differences and evidence. Legacy fixture corrections retain their deterministic policy rules.
 - A rejected replacement opens a focused evidence decision. Authorising a further request does not accept that replacement or resolve the check.
 - Every written message version needs a human disposition before completion, including messages classified as harmless or unrelated.
 - Once other accepted evidence passes every check, a `document_rejection` task allows a reviewer to exclude an unnecessary rejected attachment. The file stays rejected and inactive; the decision, original and reason remain stored. Completion recomputes the checks and all other gates.
 - Originals and previous versions remain available. A stored hash is checked when the original is retrieved.
 
-The fixture parser reads visible labelled fields from the CPL-1 invoice and receipt forms, including fields arranged in columns. User uploads use Gemini extraction for ordinary English text PDFs. Both paths feed the same review rules. Prepared responses and walkthrough instructions are exposed only to the demo UI; the agent snapshot contains saved evidence and actions, with no future replies or expected outcomes.
+The fixture parser reads visible labelled fields from the CPL-1 invoice and receipt forms, including fields arranged in columns. User uploads use visual reading of every PDF and rendered Word page, structured readers for spreadsheets/text, and Gemini assessment of every requirement. Visual calls combine transcription and field indexing; progress is persisted between batches. Previous versions remain comparison-only review context, and explicit numerical reconciliations constrain automatic passes. The field index preserves repeated items and raw notation; full source content remains available to review. The legacy fixture controller remains available for deterministic benchmark comparisons. Both paths retain the existing case, request and completion lifecycle. Prepared responses and walkthrough instructions are exposed only to the demo UI; the agent snapshot contains saved evidence and actions, with no future replies or expected outcomes.
 
 Source passages make extracted values traceable; they do not guarantee correct interpretation. Reviewers can inspect the original and quoted facts in **Evidence**, then supply a clearer or corrected document when needed.
 

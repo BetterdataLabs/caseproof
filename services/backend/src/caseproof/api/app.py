@@ -14,7 +14,7 @@ import uuid
 from decimal import Decimal
 from typing import Any, Literal
 
-from fastapi import Depends, FastAPI, Header, Request, Response
+from fastapi import Depends, FastAPI, Header, Query, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -36,8 +36,10 @@ from ..actors import (
 from ..casework import apply_checks, create_case, org_controls, settle_execution, try_complete
 from ..config import get_settings
 from ..credit_research import ResearchOptions
+from ..credit_research import allocate_budget as allocate_research_budget
 from ..db import global_session, org_session
 from ..document_checks import configure_checks
+from ..document_content import EXTENSIONS, identify_format, image_preview
 from ..errors import Conflict, DomainError, Forbidden, NotFound, StaleRevision, Unsupported
 from ..history import bump, lock_case, record, utcnow
 from ..identity import (
@@ -75,7 +77,7 @@ from ..queue import prompt_dispatch
 from ..requests import advance_demo_clock, issue_request, prepare_request, receive_staged_response
 from ..storage import object_store
 from ..tasks import claim, decide, release
-from ..views import audit_json, case_detail, etag_for, list_cases, task_inbox
+from ..views import audit_json, case_detail, etag_for, list_cases, list_research, task_inbox
 
 log = logging.getLogger("caseproof.api")
 settings = get_settings()
@@ -520,6 +522,7 @@ def retry_credit_research(
         case.credit_research = {
             k: v for k, v in {**previous, "status": "pending"}.items() if k not in {"error", "completed_at"}
         }
+        allocate_research_budget(case, ctx.actor, session)
         record(
             session,
             case,
@@ -549,6 +552,18 @@ def get_cases(
 ) -> dict[str, Any]:
     with org_session(ctx.actor.org_id) as session:
         return list_cases(session, ctx.actor, view=view, assigned=assigned, query=q, cursor=cursor)
+
+
+@app.get("/v1/research")
+def get_research(
+    status: Literal["all", "pending", "researching", "complete", "failed"] = "all",
+    q: str | None = Query(default=None, max_length=200),
+    cursor: int = Query(default=0, ge=0),
+    limit: int = Query(default=30, ge=1, le=100),
+    ctx: Ctx = Depends(current),
+) -> dict[str, Any]:
+    with org_session(ctx.actor.org_id) as session:
+        return list_research(session, ctx.actor, status=status, query=q, cursor=cursor, limit=limit)
 
 
 class CreateCaseIn(BaseModel):
@@ -606,7 +621,7 @@ async def upload_form(
     request: Request, *, initial: bool, checks_only: bool = False
 ) -> tuple[list[Upload], dict[str, Any], list[Upload]]:
     if not request.headers.get("content-type", "").startswith("multipart/form-data"):
-        raise Unsupported("MULTIPART_REQUIRED", "Choose PDF files using the upload form.")
+        raise Unsupported("MULTIPART_REQUIRED", "Choose documents using the upload form.")
     async with request.form(max_files=MAX_FILES + 2, max_fields=12, max_part_size=8192) as form:
         uploads = []
         references = []
@@ -622,11 +637,15 @@ async def upload_form(
                     raise Unsupported("INVALID_FILE_ROLE", "Choose an invoice or delivery receipt.")
                 data = await value.read(MAX_FILE_BYTES + 1)
                 if len(data) > MAX_FILE_BYTES:
-                    raise Unsupported("FILE_TOO_LARGE", "Each PDF must be at most 10 MiB.")
-                if not data.startswith(b"%PDF-"):
+                    raise Unsupported("FILE_TOO_LARGE", "Each document must be at most 10 MiB.")
+                try:
+                    mime = identify_format(data, value.filename or "")
+                except (ValueError, OSError) as exc:
+                    raise Unsupported("UNREADABLE_FORMAT", str(exc)) from exc
+                if is_reference and mime != "application/pdf":
                     raise Unsupported(
-                        "PDF_REQUIRED",
-                        "Upload PDF files. Images and Word files need to be saved as text PDFs first.",
+                        "REFERENCE_PDF_REQUIRED",
+                        "Appearance reference templates currently require PDF files.",
                     )
                 filename = re.sub(
                     r"[\x00-\x1f\x7f]",
@@ -671,17 +690,19 @@ async def upload_form(
         or len(references) > 2
         or sum(len(u.data) for u in uploads + references) > 20 * 1024 * 1024
     ):
-        raise Unsupported("UPLOAD_LIMIT", "Choose at most 5 PDFs, totaling at most 20 MiB.")
+        raise Unsupported("UPLOAD_LIMIT", "Choose at most 5 documents, totaling at most 20 MiB.")
     invoices = [u for u in uploads if u.role == "invoice"]
     if len(invoices) > 1 or (initial and len(invoices) != 1):
-        raise Unsupported("INVOICE_REQUIRED", "Start with exactly one invoice PDF; receipts are optional.")
+        raise Unsupported(
+            "INVOICE_REQUIRED", "Start with one invoice document; supporting evidence is optional."
+        )
     uploads.sort(key=lambda u: u.role != "invoice")  # baseline must be read before receipts
     if len(fields.get("message", "")) > 1200 or len(fields.get("sender", "")) > 200:
         raise Unsupported(
             "MESSAGE_LENGTH", "Replies allow up to 1,200 characters and sender names up to 200."
         )
     if not checks_only and not uploads and not fields.get("message"):
-        raise Unsupported("INPUT_REQUIRED", "Add a PDF or write a reply.")
+        raise Unsupported("INPUT_REQUIRED", "Add a document or write a reply.")
     if fields.get("replaces"):
         if initial or len(uploads) != 1:
             raise Unsupported(
@@ -972,11 +993,16 @@ def preview(case_id: str, version_id: str, page: int = 1, ctx: Ctx = Depends(cur
     with org_session(ctx.actor.org_id) as session:
         case = load_case(session, case_id)
         version = _version(session, case, version_id)
-        if version.mime != "application/pdf" or not version.object_key:
+        rendered = (version.structured or {}).get("rendered_document")
+        if not version.object_key or not (
+            version.mime == "application/pdf" or (version.mime or "").startswith("image/") or rendered
+        ):
             raise Unsupported("NO_PREVIEW", "This source has no document preview.")
         if not 1 <= page <= (version.page_count or 1):
             raise NotFound("PAGE_NOT_FOUND", "Page not found.")
-        key, sha = version.object_key, version.sha256
+        key, sha, mime = version.object_key, version.sha256, version.mime
+        if rendered:
+            key, sha, mime = rendered["object_key"], rendered["sha256"], rendered["mime"]
     store = object_store()
     derived = f"orgs/{ctx.actor.org_id}/cases/{case_id}/previews/{sha}-p{page}.png"
     if store.exists(derived):
@@ -985,7 +1011,11 @@ def preview(case_id: str, version_id: str, page: int = 1, ctx: Ctx = Depends(cur
         original = store.get(key)
         if hashlib.sha256(original).hexdigest() != sha:
             raise Conflict("ORIGINAL_ALTERED", "The stored original does not match its registered hash.")
-        png = render_preview(original, page - 1)
+        png = (
+            render_preview(original, page - 1)
+            if mime == "application/pdf"
+            else image_preview(original, page - 1)
+        )
         store.put_immutable(derived, png)
     return Response(content=png, media_type="image/png", headers={"Cache-Control": "private, max-age=3600"})
 
@@ -997,15 +1027,17 @@ def original(case_id: str, version_id: str, ctx: Ctx = Depends(current)) -> Resp
         version = _version(session, case, version_id)
         if not version.object_key:
             raise Unsupported("NO_ORIGINAL", "This source has no stored file.")
-        key, sha, label = version.object_key, version.sha256, version.label
+        key, sha, label, mime = version.object_key, version.sha256, version.label, version.mime
         record(session, case, "OriginalDownloaded", ctx.actor, f"{ctx.actor.name} downloaded {label}")
     data = object_store().get(key)
     if hashlib.sha256(data).hexdigest() != sha:
         raise Conflict("ORIGINAL_ALTERED", "The stored original does not match its registered hash.")
     return Response(
         content=data,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{case_id[:8]}-{label}.pdf"'},
+        media_type=mime or "application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{case_id[:8]}-{label}.{EXTENSIONS.get(mime, "bin")}"'
+        },
     )
 
 

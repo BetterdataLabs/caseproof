@@ -17,6 +17,7 @@ from .casework import apply_checks, next_reference, policy_of, reopen_if_complet
 from .credit_research import ResearchOptions
 from .credit_research import configure as configure_research
 from .document_checks import configure_checks, pending_review
+from .document_content import EXTENSIONS, identify_format
 from .errors import Conflict, Unsupported
 from .evidence import _admission, _get_document, _next_sequence, ingest_written_message
 from .history import bump, record, utcnow
@@ -84,7 +85,8 @@ def register_upload(
                 "The document to replace is no longer active. Refresh and select it again.",
             )
     sequence = _next_sequence(session, case)
-    key = f"orgs/{case.org_id}/cases/{case.id}/originals/{sha}.pdf"
+    mime = identify_format(upload.data, upload.name)
+    key = f"orgs/{case.org_id}/cases/{case.id}/originals/{sha}.{EXTENSIONS[mime]}"
     generation = object_store().put_immutable(key, upload.data)
     doc = _get_document(session, case, upload.role, f"UPLOAD-{sequence}", upload.name)
     version = DocumentVersion(
@@ -99,14 +101,16 @@ def register_upload(
         received_via="upload",
         sha256=sha,
         size_bytes=len(upload.data),
-        mime="application/pdf",
+        mime=mime,
         object_key=key,
         object_generation=generation,
         reply_id=reply_id,
         received_revision=case.revision,
         structured={"filename": upload.name, "replaces": upload.replaces},
         parser_version="upload/1",
-        visual_review=pending_review(case.document_checks, upload.role),
+        visual_review=pending_review(case.document_checks, upload.role)
+        if mime == "application/pdf"
+        else None,
     )
     session.add(version)
     session.flush()
@@ -204,7 +208,7 @@ def add_input(
     if case.lifecycle == "archived":
         raise Conflict("CASE_ARCHIVED", "Archived cases cannot receive new documents.")
     if uploads and case.automation_mode != "autonomous":
-        raise Conflict("AUTOMATION_REQUIRED", "Turn on autonomous mode to read uploaded PDFs.")
+        raise Conflict("AUTOMATION_REQUIRED", "Turn on autonomous mode to read uploaded documents.")
     dedupe = (
         "input:"
         + hashlib.sha256(
@@ -239,7 +243,7 @@ def add_input(
     ):
         raise Conflict(
             "ALREADY_RECEIVED",
-            "These PDFs are already on this case. Add a changed document or a written reply.",
+            "These documents are already on this case. Add a changed document or a written reply.",
         )
     latest = (
         session.execute(

@@ -72,7 +72,7 @@ export function SubmissionForm({
       files.some((f) => f.size > 10 * 1024 * 1024) ||
       files.reduce((sum, f) => sum + f.size, 0) > 20 * 1024 * 1024
     ) {
-      setValidation("Choose up to 5 PDFs, no more than 10 MiB each and 20 MiB in total.");
+      setValidation("Choose up to 5 documents, no more than 10 MiB each and 20 MiB in total.");
       return;
     }
     if (!files.length && !String(body.get("message") ?? "").trim()) {
@@ -107,7 +107,7 @@ export function SubmissionForm({
               confirms what arrived.
             </p>
             <Field
-              label="Invoice PDF"
+              label="Invoice"
               htmlFor="vendor-invoice"
               hint="Your company's invoice to the buyer."
             >
@@ -115,13 +115,13 @@ export function SubmissionForm({
                 id="vendor-invoice"
                 name="invoice"
                 type="file"
-                accept=".pdf,application/pdf"
+                accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,.docx,.xlsx,.csv,.txt"
                 required
                 className={fileStyle}
               />
             </Field>
             <Field
-              label="Delivery receipt PDFs (optional)"
+              label="Delivery and supporting documents (optional)"
               htmlFor="vendor-receipts"
               hint="Your buyer's acknowledgement of goods received for this invoice. You can add these later."
             >
@@ -129,14 +129,14 @@ export function SubmissionForm({
                 id="vendor-receipts"
                 name="receipts"
                 type="file"
-                accept=".pdf,application/pdf"
+                accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,.docx,.xlsx,.csv,.txt"
                 multiple
                 className={fileStyle}
               />
             </Field>
             <p className="text-xs leading-relaxed text-subtle">
-              Automatic checks cover one goods line in SGD, without tax or extra charges. Other
-              documents need bank review.
+              Upload PDFs, scans, images, Word documents, spreadsheets, CSV or text files. Multiple
+              items, decimal quantities, currencies, taxes and charges are supported.
             </p>
           </>
         )}
@@ -185,15 +185,15 @@ export function SubmissionForm({
                 </Field>
                 {kind === "invoice" && invoice && (
                   <p className="text-xs leading-relaxed text-muted">
-                    This will replace invoice {invoice.number}, version {invoice.version}. The PDF
-                    must state that it replaces the earlier invoice.
+                    This will replace invoice {invoice.number}, version {invoice.version}. The
+                    original remains in the review history.
                   </p>
                 )}
                 {kind === "receipt_correction" && (
                   <Field
                     label="Which receipt does it correct?"
                     htmlFor="vendor-replaces"
-                    hint="The PDF must explicitly replace this receipt. Earlier versions stay in the record."
+                    hint="Choose the receipt this document corrects. Earlier versions stay in the record."
                   >
                     <Select id="vendor-replaces" name="replaces" required defaultValue="">
                       <option value="" disabled>
@@ -208,7 +208,7 @@ export function SubmissionForm({
                   </Field>
                 )}
                 <Field
-                  label="PDF documents"
+                  label="Documents"
                   htmlFor="vendor-attachment"
                   hint={
                     kind === "receipts"
@@ -221,7 +221,7 @@ export function SubmissionForm({
                     id="vendor-attachment"
                     name={kind === "invoice" ? "invoice" : "receipts"}
                     type="file"
-                    accept=".pdf,application/pdf"
+                    accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,.docx,.xlsx,.csv,.txt"
                     multiple={kind === "receipts"}
                     required
                     className={fileStyle}
@@ -239,7 +239,7 @@ export function SubmissionForm({
         )}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
           <p className="max-w-xs text-xs text-subtle">
-            Text PDFs · 10 MiB per file · 20 MiB per submission
+            Documents · 10 MiB per file · 20 MiB per submission
           </p>
           <Button type="submit" loading={upload.isPending} icon={<Send className="size-4" />}>
             {detail ? "Send to bank" : "Submit for review"}

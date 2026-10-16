@@ -13,4 +13,4 @@ The original repository documents are preserved in [original-repository/](origin
 | Manual PDF scenario results, 13 October 2026              | [manual-pdf-scenarios.json](evaluation/manual-pdf-scenarios.json)                             |
 | Superseded comparison using the original receipt fixtures | [gemini-3.8-flash-original-fixtures.json](evaluation/gemini-3.8-flash-original-fixtures.json) |
 
-The earlier comparison is retained for provenance. The [current comparison report](../../evaluation/results/latest.json) uses corrected receipt timestamps and supplies the app's Evaluation page. See [evaluation notes](../TESTING.md) for the recorded outcomes and limitations.
+The earlier comparison is retained for provenance. The [current comparison report](../../evaluation/results/latest.json) uses corrected receipt timestamps. See [evaluation notes](../TESTING.md) for the recorded outcomes and limitations.

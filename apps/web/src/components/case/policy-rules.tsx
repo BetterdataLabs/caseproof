@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Calculator, ChevronDown, FileCheck2, PackageCheck, Plus, Trash2 } from "lucide-react";
 import { Badge, Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
 
 export interface PolicyRule {
@@ -27,16 +27,29 @@ export function PolicyRules({
     onChange(rules.map((r) => (r.key === key ? { ...r, ...changes } : r)));
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {rules.map((rule, i) => (
           <div
             key={rule.key}
-            className="space-y-3 rounded-xl border border-line-soft bg-canvas/50 p-4"
+            className={`min-w-0 gap-4 rounded-xl border border-line bg-white p-5 ${
+              editing ? "flex flex-col" : "grid md:row-span-3 md:grid-rows-subgrid"
+            }`}
           >
-            <div className="flex items-center justify-between gap-2">
-              <Badge tone={CORE.has(rule.key) ? "neutral" : "teal"}>
-                {CORE.has(rule.key) ? "Core check" : "Gemini review"}
-              </Badge>
+            <div className="flex items-center justify-between gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-teal-50 text-teal-700">
+                {rule.key === "invoice_total" ? (
+                  <Calculator className="size-5" aria-hidden />
+                ) : rule.key === "delivery_receipts" ? (
+                  <PackageCheck className="size-5" aria-hidden />
+                ) : (
+                  <FileCheck2 className="size-5" aria-hidden />
+                )}
+              </span>
+              {editing && (
+                <Badge tone={CORE.has(rule.key) ? "neutral" : "teal"}>
+                  {CORE.has(rule.key) ? "Required" : "Additional"}
+                </Badge>
+              )}
               {editing && !CORE.has(rule.key) && (
                 <button
                   type="button"
@@ -65,8 +78,8 @@ export function PolicyRules({
                   htmlFor={`rule-criteria-${rule.key}`}
                   hint={
                     CORE.has(rule.key)
-                      ? "The core calculation remains mandatory. Changes to these criteria also receive a Gemini review."
-                      : "State what the document must show. Gemini checks these criteria and cites the evidence."
+                      ? "This check is always required. Any added criteria are also assessed during review."
+                      : "Describe what the document must show to satisfy this requirement."
                   }
                 >
                   <Textarea
@@ -102,18 +115,24 @@ export function PolicyRules({
               </>
             ) : (
               <>
-                <p className="text-[13px] font-semibold text-ink">
-                  {i + 1}. {rule.label}
-                </p>
-                <p className="text-xs leading-relaxed text-muted">{rule.description}</p>
-                {!CORE.has(rule.key) && (
-                  <p className="text-[11px] text-subtle">
-                    Applies to:{" "}
+                <div>
+                  <h3 className="text-[15px] font-semibold leading-6 text-ink">{rule.label}</h3>
+                  <p className="mt-2 text-xs text-muted">
                     {rule.depends_on_roles
-                      .map((r) => (r === "invoice" ? "invoice" : "delivery receipts"))
-                      .join(" and ")}
+                      .map((r) => (r === "invoice" ? "Invoice" : "Delivery receipts"))
+                      .join(" · ")}
                   </p>
-                )}
+                </div>
+                <details className="group/criteria border-t border-line-soft pt-3">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md text-xs font-medium text-teal-700 transition-colors hover:text-teal-800 [&::-webkit-details-marker]:hidden">
+                    View criteria
+                    <ChevronDown
+                      className="size-4 shrink-0 transition-transform group-open/criteria:rotate-180"
+                      aria-hidden
+                    />
+                  </summary>
+                  <p className="mt-3 text-sm leading-relaxed text-muted">{rule.description}</p>
+                </details>
               </>
             )}
           </div>

@@ -1,17 +1,17 @@
 {
   "key": "sales-invoice-financing-sample",
   "version": 1,
-  "name": "Invoice financing — document review",
-  "notice": "Requirements for reviewing invoice accuracy, delivery evidence and supporting documents before financing assessment.",
+  "name": "Invoice financing review",
+  "notice": "Validate invoices, delivery evidence, and supporting documents before financing assessment.",
   "product": "sales_invoice_financing",
   "currency": "SGD",
   "supported_layout": "CPL-1",
-  "supported_contract": "English text PDF in layout CPL-1; one invoice line in SGD; matching quantity units; no tax or other charges.",
+  "supported_contract": "Business documents in supported file formats; interpreted using their stated currencies, units, line items and adjustments.",
   "requirements": [
     {
       "key": "invoice_total",
-      "label": "Invoice total agrees with quantity \u00d7 unit price",
-      "description": "The active invoice states one SGD line with no tax or charges, and quantity \u00d7 unit price equals the stated total (decimal arithmetic, 2 dp).",
+      "label": "Invoice amounts are consistent",
+      "description": "Assess invoice accuracy across all line items, quantities, prices, taxes, discounts, credits and other charges. Reconcile the stated totals using the document’s currencies and rounding conventions. Identify missing information and inconsistencies.",
       "depends_on_roles": [
         "invoice"
       ]
@@ -19,7 +19,7 @@
     {
       "key": "delivery_receipts",
       "label": "Delivery receipts cover the full invoiced quantity",
-      "description": "Distinct delivery events from a permitted receipt source, referencing the invoice with matching goods and units, add up to the invoiced quantity. Copies count once; dispatch is not receipt.",
+      "description": "Assess whether evidence of receipt accounts for the invoiced items and quantities. Match parties, references, items and units in context. Account for partial and cumulative deliveries without double-counting, and identify shortfalls, conflicts or unsupported conversions. Dispatch alone does not confirm receipt.",
       "depends_on_roles": [
         "invoice",
         "delivery_receipt"
@@ -72,7 +72,7 @@
     "invoice_correction": {
       "label": "Invoice correction",
       "requirement": "invoice_total",
-      "text": "Invoice {invoice_number} states a total of {stated_total}, but {quantity} {unit} \u00d7 {unit_price} = {expected_total}. Please provide a replacement invoice issued by {seller_name} that explicitly replaces version {invoice_version}, or explain the difference."
+      "text": "Invoice {invoice_number} states a total of {stated_total}, but {quantity} {unit} × {unit_price} = {expected_total}. Please provide a replacement invoice issued by {seller_name} that explicitly replaces version {invoice_version}, or explain the difference."
     },
     "invoice_replacement_clarification": {
       "label": "Replacement invoice clarification",
@@ -87,7 +87,7 @@
     "supported_document": {
       "label": "Supported document format",
       "requirement": null,
-      "text": "Document {document_label} could not be processed ({rejection}). Please provide the document as a text PDF in the supported layout, with one SGD invoice line and no tax or other charges."
+      "text": "Document {document_label} needs attention: {rejection}. Please provide the missing information or a readable copy."
     },
     "receipt_basis_clarification": {
       "label": "Receipt basis clarification",

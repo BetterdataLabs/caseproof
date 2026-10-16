@@ -28,7 +28,7 @@ from ..errors import DomainError
 from ..history import bump, lock_case, record
 from ..jobs import require_lease
 from ..models import AgentAction, Decision, Document, DocumentVersion, InfoRequest, Observation, RequestItem
-from ..policies import settings_for
+from ..policies import definition_for, settings_for
 from ..tasks import open_task
 from .gateway import RunContext, generate_json
 
@@ -159,7 +159,7 @@ def case_snapshot(session: Session, case_id: uuid.UUID) -> dict[str, Any]:
     pending_templates = req.outstanding_templates(session, case.id)
     question_rows = []
     policy = casework.policy_of(session, case)
-    requirements = {r["key"]: r for r in policy.definition["requirements"]}
+    requirements = {r["key"]: r for r in definition_for(policy)["requirements"]}
     for q in questions.values():
         if q.requirement_key not in requirements:
             continue
@@ -218,7 +218,9 @@ class Claim(BaseModel):
     delivery_ref: str | None = Field(
         default=None, description="Delivery reference the claim is about, e.g. D1."
     )
-    quantity: str | None = Field(default=None, description="Quantity stated in the claim, digits only.")
+    quantity: str | None = Field(
+        default=None, description="Quantity stated in the claim; preserve decimal precision and signs."
+    )
     unit: str | None = None
     time_qualifier: str | None = Field(default=None, description="Time or date qualifier exactly as stated.")
     compared_source: str | None = Field(

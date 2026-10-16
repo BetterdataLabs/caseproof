@@ -69,7 +69,12 @@ def compute_checks(session: Session, case: Case) -> dict[str, CheckResult]:
     claims = [
         ClaimView(str(c.id), c.requirement_key, c.status, c.conditions) for c in claims_of(session, case.id)
     ]
-    return combine_checks(session, case, evaluate(parties_of(case), version_views(session, case.id), claims))
+    baseline = (
+        {}
+        if case.scenario_key == "uploaded"
+        else evaluate(parties_of(case), version_views(session, case.id), claims)
+    )
+    return combine_checks(session, case, baseline)
 
 
 def questions_of(session: Session, case_id: uuid.UUID) -> dict[str, Question]:
@@ -258,13 +263,13 @@ def apply_checks(session: Session, case: Case, actor: Actor, *, resolve: bool) -
                 proposed_action="Keep the original transaction unchanged and authorise a request for a permitted correction.",
                 dedupe_key=f"evidence_problem:{key}",
             )
-    if all(result.result == "pass" for result in results.values()):
+    if case.scenario_key == "uploaded" or all(result.result == "pass" for result in results.values()):
         _review_unused_rejections(session, case, actor)
     return results
 
 
 def _review_unused_rejections(session: Session, case: Case, actor: Actor) -> None:
-    """Give rejected extra files a human disposition once valid evidence covers the checklist."""
+    """Let a reviewer disposition rejected uploads without overriding the checklist first."""
     from .tasks import open_task
 
     if case.paused_reason == "ON_HOLD":
@@ -289,9 +294,9 @@ def _review_unused_rejections(session: Session, case: Case, actor: Actor) -> Non
             observation_ids=[],
             passages=[],
             title=f"Review unused rejected document: {version.label}",
-            question=f"The checklist passes using other evidence. Should {version.label} be excluded from this review, or should the case stay on hold?",
+            question=f"Is {version.label} unnecessary for this review? Excluding it reruns the checklist using the remaining evidence; it does not satisfy any requirement.",
             why_stopped=version.reject_detail or "This file could not be accepted as evidence.",
-            proposed_action="Inspect the rejected file and accepted evidence. Record why this file is unnecessary; it will stay in history and will not count toward any check.",
+            proposed_action="Inspect the attachment and record why it is unnecessary, or keep it on hold. An excluded file stays in history; missing evidence still needs to be supplied.",
             dedupe_key=f"unused-rejection:{version.id}",
         )
     ids = {str(v.id) for v in rejected}

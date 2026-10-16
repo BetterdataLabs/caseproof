@@ -34,7 +34,7 @@ Some scenarios deliberately remain open: scenario 13 includes tax and another go
 
 ## Saved comparison report
 
-The app's **Evaluation** page reads [evaluation/results/latest.json](../evaluation/results/latest.json). It records 60 constructed cases across 12 scenario families, run on **12 October 2026** with Gemini 3.8 Flash through Vertex AI's global endpoint.
+The saved comparison report is available at [evaluation/results/latest.json](../evaluation/results/latest.json). It records 60 constructed cases across 12 scenario families, run on **12 October 2026** with Gemini 3.8 Flash through Vertex AI's global endpoint.
 
 | Agent result                                     | Recorded value |
 | ------------------------------------------------ | -------------- |

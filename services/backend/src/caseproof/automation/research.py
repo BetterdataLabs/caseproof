@@ -51,7 +51,14 @@ Each dimension needs a concise analysis and evidence references with exact quote
 Keep each analysis under 65 words and use at most two short citations per area.
 Use unknown when evidence is missing, stale, inaccessible, conflicting or not attributable to this legal entity.
 For financial capacity, need dated financial evidence, not marketing, company size, popularity or news sentiment.
+For repayment, cite the latest available operating cash-flow figure with its period and currency, and relate it
+to debt service or maturities when supplied. If those figures are unavailable, use unknown. Absence of defaults,
+insolvency or litigation is conduct evidence and NEVER establishes cash flow or repayment capacity.
+For financial_strength, give dated liquidity, debt or capital figures, preserving consolidated versus standalone
+scope. Prefer financial-report passages over general background passages for both financial dimensions.
 For conduct, distinguish allegation, investigation and final outcome; a lawsuit alone is not insolvency.
+Do not claim a clean legal record or a comprehensive absence of enforcement from an ordinary court case or
+general search results. Describe what the supplied evidence establishes and the limits of the search.
 Identity is matched only when legal name AND country (and registration number when given) match public evidence.
 Do not transfer facts from parent/subsidiaries/namesakes. Do not infer zero risk from silence. no_adverse_found
 means only no material concern observed in the cited evidence. Do not invent a numeric score, probability of
@@ -232,13 +239,14 @@ async def process_credit_research(ctx: RunContext) -> bool:
                     json.dumps(
                         {
                             "company": subject,
-                            "dimensions": list(DIMENSIONS),
+                            "dimensions": DIMENSIONS,
                             "as_of": utcnow().date().isoformat(),
                             "evidence": [p for s in searches for p in s["passages"]],
                         }
                     ),
                     Assessment,
                     output_tokens=4096,
+                    timeout_s=45,
                 )
                 assessment = Assessment.model_validate_json(response.text)
             else:

@@ -1,0 +1,29 @@
+# Document review
+
+Uploaded documents use the `document-review/3` engine. The reader accepts multiple line items, fractional or signed quantities, different currencies, taxes, discounts, freight and credit adjustments without imposing a demo invoice layout or language.
+
+## Processing
+
+1. Preserve the uploaded bytes, media type and content hash. Read PDFs, PNG/JPEG/TIFF/WebP images, DOCX, XLSX, CSV or text documents. Every PDF page is rendered to an image, including PDFs with selectable text. Word documents are rendered to PDF with LibreOffice and then read as page images. The derived Word PDF is cached per original and available for preview; originals remain unchanged. Images and spreadsheet embedded images also use Gemini visual transcription. Spreadsheet values, formulas and number-format metadata are retained; cached formula results are not assumed correct.
+2. Keep the source text by page, sheet or source section. Gemini transcribes visible elements and indexes raw values, quotations and line-item groups in the same visual call. Up to four pages are processed per batch; completed pages, field observations and document context are saved before continuing. Only unfinished pages are rendered on continuation. Spreadsheet, CSV and text readers retain their structured content. Missing or unverified index fields do not discard the readable document.
+3. Ask Gemini to plan the relevant calculations. Operands identify their original source values, numeric conventions and interpretations. A bounded decimal calculator performs the arithmetic, preserves printed signs, and uses the explicitly selected rounding method and its documented basis whenever rounding changes a value. Exact display precision does not need a rounding assumption. Gemini defines the equations and independently cited comparison amounts; the calculator reports matched or mismatched relationships. It cannot execute arbitrary code or fetch data.
+4. Ask Gemini to assess every published requirement using source content and calculation results. Findings explain discrepancies or missing information and cite their evidence. An incomplete reading, unsupported quotation, missing invoice reconciliation, unresolved calculation or mismatched comparison cannot produce an automatic pass. Both stages receive labeled current evidence, previous versions, policy requirements and retained disputes. A replacement comparison is shared across affected requirements; uncertainties are scoped to the requirement they affect. The full payload, including calculation results, is budgeted before each call; any text truncation is explicit and prevents automatic passing.
+5. Use those findings in the existing requests, decisions, corrections and completion workflow. Follow-up requests describe the specific issue. PDF and JSON summaries retain the assessment, comparisons and replacement changes. Previous versions are comparison-only context: they cannot add to current invoice or receipt totals. A replacement requires a cited comparison with its original before passing. Reviewers can exclude unnecessary rejected uploads before the checklist passes; the remaining evidence is then assessed again, and the excluded original stays in history.
+
+A quotation match confirms that the cited text exists in extracted content; it does not authenticate the original or prove the interpretation correct. Visual transcriptions are recorded as such, and originals remain available to inspect. Reviewers' retained disputes cannot be waived by the model.
+
+## Existing records
+
+Original files and completed summaries are preserved. Open uploaded cases use the new assessment engine on their next review. Already-read originals retain their saved extraction; new and pending PDF/Word uploads use visual reading. Files rejected by the legacy reader for its content restrictions are retried when their case next runs; this does not enqueue every saved case automatically. The exact legacy default criteria are translated to the current general criteria, while additional supervisor-authored requirements remain intact.
+
+The CPL-1 fixture parser and deterministic evaluation controller remain available for the historical benchmark. Uploaded sample PDFs use the same general reader as other uploads.
+
+## Processing limits
+
+The existing file-size, page/sheet, model-context, time and cost limits still apply. Visual transcription saves progress between bounded worker invocations. Content outside a complete review window is flagged, never silently treated as passing. Encrypted, corrupted or undecodable files need a readable replacement. Optional appearance checks currently apply to PDFs; business-content review covers all listed formats.
+
+DOCX citations identify pages of the rendered Word document. LibreOffice and document fonts are included in the backend image. When running the backend directly outside Docker, install LibreOffice Writer and make `libreoffice` or `soffice` available on PATH. Rendering failures require a readable replacement; the low-level structured fallback preserves tabs and line breaks and is explicitly marked for manual review. CSV and text files support UTF-8, BOM-marked UTF-16 and Windows-1252. File formats outside the listed readers need an additional decoding adapter.
+
+## Verification
+
+The local backend suite covers real file decoding, repeated lines, decimal precision, numeric conventions, source grounding, incomplete reading, calculations, follow-up requests and original downloads, together with the existing workflow and isolation checks. Regression checks also exercise dropped signs, contradictory passes, explicit rounding, Word separators and rendering, correction context, batched reading, and exclusion without bypassing missing-evidence checks. Live Gemini checks exercise the actual visual-reading and assessment prompts. These are functional checks, not a production error-rate estimate.

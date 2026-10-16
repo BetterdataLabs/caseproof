@@ -55,6 +55,7 @@ export function useCaseCommand<TVars, TRes = unknown>(
         toast.success(typeof opts.success === "function" ? opts.success(res) : opts.success);
       qc.invalidateQueries({ queryKey: ["case", caseId] });
       qc.invalidateQueries({ queryKey: ["cases"] });
+      qc.invalidateQueries({ queryKey: ["research"] });
       qc.invalidateQueries({ queryKey: ["session"] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
       opts?.onSuccess?.(res);

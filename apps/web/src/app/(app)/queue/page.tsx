@@ -5,7 +5,9 @@ import {
   ArrowRight,
   BadgeCheck,
   Clock3,
+  Activity,
   Hand,
+  LayoutGrid,
   Loader2,
   PauseCircle,
   Plus,
@@ -21,6 +23,7 @@ import { useRoles } from "@/lib/session";
 import type { CaseList, CaseSummary, StatusKey } from "@/lib/types";
 import { PageHeader } from "@/components/shell/app-shell";
 import { NewCaseDialog } from "@/components/queue/new-case-dialog";
+import { QueueFlow, useQueueSummaryMode } from "@/components/queue/queue-flow";
 import {
   Avatar,
   Button,
@@ -83,6 +86,7 @@ export default function QueuePage() {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [creating, setCreating] = useState(false);
+  const [summary, setSummary] = useQueueSummaryMode();
 
   useEffect(() => {
     const t = setTimeout(() => setQuery(search), 250);
@@ -123,46 +127,88 @@ export default function QueuePage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {VIEWS.map((v) => {
-          const Icon = v.icon;
-          const active = view === v.key;
-          return (
+      <div className="mb-3 flex justify-end">
+        <div
+          role="group"
+          aria-label="Queue overview"
+          className="inline-flex rounded-[10px] border border-line bg-paper p-0.5"
+        >
+          {(
+            [
+              ["flow", "Flow", Activity],
+              ["tiles", "Tiles", LayoutGrid],
+            ] as const
+          ).map(([key, label, Icon]) => (
             <button
-              key={v.key}
-              onClick={() => setView(active ? "all" : v.key)}
-              aria-pressed={active}
+              key={key}
+              type="button"
+              onClick={() => setSummary(key)}
+              aria-pressed={summary === key}
               className={cx(
-                "group rounded-[var(--radius-card)] border bg-paper p-4 text-left shadow-[var(--shadow-card)] transition-all hover:border-teal-300",
-                active ? "border-teal-700 ring-2 ring-teal-200" : "border-line",
+                "inline-flex h-8 items-center gap-1.5 rounded-[8px] px-3 text-[12.5px] font-semibold transition-colors",
+                summary === key ? "bg-teal-50 text-teal-800" : "text-muted hover:text-ink",
               )}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-[12.5px] font-semibold text-muted">{v.label}</span>
-                <Icon
-                  className={cx(
-                    "size-4",
-                    TILE_TONE[v.key],
-                    v.key === "working" && (counts.working ?? 0) > 0 && "animate-spin",
-                  )}
-                  aria-hidden
-                />
-              </div>
-              <p
+              <Icon className="size-3.5" aria-hidden /> {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {summary === "flow" ? (
+        list.data ? (
+          <QueueFlow
+            items={list.data.items}
+            counts={counts}
+            view={view}
+            onSelect={setView}
+            onOpen={(id) => router.push(`/cases/${id}`)}
+          />
+        ) : (
+          <Skeleton className="h-[260px]" />
+        )
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {VIEWS.map((v) => {
+            const Icon = v.icon;
+            const active = view === v.key;
+            return (
+              <button
+                key={v.key}
+                onClick={() => setView(active ? "all" : v.key)}
+                aria-pressed={active}
                 className={cx(
-                  "mt-2 text-[30px] font-bold leading-none tracking-[-0.03em]",
-                  (counts[v.key] ?? 0) > 0 ? "text-ink" : "text-subtle",
+                  "group rounded-[var(--radius-card)] border bg-paper p-4 text-left shadow-[var(--shadow-card)] transition-all hover:border-teal-300",
+                  active ? "border-teal-700 ring-2 ring-teal-200" : "border-line",
                 )}
               >
-                {list.isLoading ? "–" : (counts[v.key] ?? 0)}
-              </p>
-              <p className="mt-2 line-clamp-2 min-h-[30px] text-[11.5px] leading-snug text-subtle">
-                {v.hint}
-              </p>
-            </button>
-          );
-        })}
-      </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[12.5px] font-semibold text-muted">{v.label}</span>
+                  <Icon
+                    className={cx(
+                      "size-4",
+                      TILE_TONE[v.key],
+                      v.key === "working" && (counts.working ?? 0) > 0 && "animate-spin",
+                    )}
+                    aria-hidden
+                  />
+                </div>
+                <p
+                  className={cx(
+                    "mt-2 text-[30px] font-bold leading-none tracking-[-0.03em]",
+                    (counts[v.key] ?? 0) > 0 ? "text-ink" : "text-subtle",
+                  )}
+                >
+                  {list.isLoading ? "–" : (counts[v.key] ?? 0)}
+                </p>
+                <p className="mt-2 line-clamp-2 min-h-[30px] text-[11.5px] leading-snug text-subtle">
+                  {v.hint}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <Card className="mt-6 overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 border-b border-line-soft px-4 py-3">

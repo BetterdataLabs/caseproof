@@ -69,7 +69,11 @@ export function DocumentViewer({
   onSelect: (label: string) => void;
 }) {
   const versions = useMemo(() => allVersions(detail), [detail]);
-  const current = versions.find((v) => v.label === selected) ?? versions[0];
+  const current =
+    versions.find((v) => v.label === selected) ??
+    versions.find((v) => v.is_active && v.role === "invoice") ??
+    versions.find((v) => v.is_active) ??
+    versions[0];
 
   if (!versions.length) {
     return (
@@ -299,7 +303,7 @@ function SourceDetail({
             highlight={finding?.page === page ? finding.box : undefined}
           />
           <div className="mt-2 flex items-center justify-between text-[12px] text-muted">
-            <span>Raster preview · active PDF content is never rendered</span>
+            <span>Document preview</span>
             <span className="flex items-center gap-1">
               {(v.page_count ?? 1) > 1 && (
                 <>
@@ -357,13 +361,30 @@ function SourceDetail({
         </div>
       )}
 
+      {!v.has_preview && v.sha256 && (
+        <a
+          href={`/api/v1/cases/${caseId}/sources/${v.id}/original`}
+          className="mx-4 mt-4 inline-block text-xs font-semibold text-teal-700 underline"
+        >
+          Download original document
+        </a>
+      )}
+      {v.text && !["written_message", "status_update"].includes(v.role) && (
+        <details open={!v.has_preview} className="m-4 rounded-xl border border-line p-3 text-xs">
+          <summary className="cursor-pointer font-semibold text-teal-700">
+            Extracted document content
+          </summary>
+          <pre className="mt-3 whitespace-pre-wrap break-words font-sans text-muted">{v.text}</pre>
+        </details>
+      )}
+
       {v.role === "status_update" && v.structured && (
         <div className="px-4 pt-3">
           <dl className="grid grid-cols-2 gap-2 rounded-xl border border-line bg-[#fafbfa] p-3 text-[13px]">
             {Object.entries(v.structured).map(([k, val]) => (
               <div key={k}>
                 <dt className="text-[11.5px] text-subtle">{humanize(k)}</dt>
-                <dd className="font-semibold text-ink">{val}</dd>
+                <dd className="font-semibold text-ink">{String(val)}</dd>
               </div>
             ))}
           </dl>
@@ -375,17 +396,20 @@ function SourceDetail({
 
       {facts.length > 0 && (
         <div className="px-4 pt-4">
-          <SectionLabel>Validated facts · read from the document text</SectionLabel>
+          <SectionLabel>Extracted fields · linked to source content</SectionLabel>
           <dl className="mt-2 divide-y divide-line-soft rounded-xl border border-line">
-            {facts.map((f) => (
+            {facts.map((f, index) => (
               <div
-                key={f.field}
+                key={`${f.field}-${index}`}
                 className={cx(
                   "flex items-start justify-between gap-3 px-3 py-2 text-[13px]",
                   KEY_FACTS.has(f.field) && "bg-teal-50/40",
                 )}
               >
-                <dt className="text-muted">{FACT_LABEL[f.field] ?? humanize(f.field)}</dt>
+                <dt className="text-muted">
+                  {f.group ? `${f.group} · ` : ""}
+                  {FACT_LABEL[f.field] ?? humanize(f.field)}
+                </dt>
                 <dd className="flex min-w-0 items-center gap-1.5 text-right font-semibold text-ink">
                   <span className="truncate">{f.value}</span>
                   <Tip
@@ -397,7 +421,11 @@ function SourceDetail({
                   >
                     <span
                       tabIndex={0}
-                      aria-label={f.verified ? "Verified against the original" : "Not verified"}
+                      aria-label={
+                        f.verified
+                          ? "Quotation matched to extracted source content"
+                          : "Not verified"
+                      }
                     >
                       <CheckCircle2
                         className={cx(

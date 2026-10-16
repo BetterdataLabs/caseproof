@@ -64,6 +64,7 @@ export interface CaseList {
 }
 
 export interface Fact {
+  group?: string;
   field: string;
   value: string;
   quote: string;
@@ -83,6 +84,8 @@ export interface DocumentChecks {
 export interface CreditResearch {
   enabled: boolean;
   target?: "buyer" | "seller";
+  country?: string;
+  requested_at?: string;
   status?: "pending" | "researching" | "complete" | "failed";
   subject?: { name: string; country: string; registration_number: string };
   assessment?: "attention_needed" | "insufficient_information" | "no_material_flags_identified";
@@ -111,6 +114,27 @@ export interface CreditResearch {
     sources: { id: string; title: string; url: string }[];
     passages: { id: string; text: string; sources: string[] }[];
   }[];
+}
+
+export interface ResearchCase {
+  id: string;
+  reference: string;
+  title: string;
+  seller: string;
+  buyer: string;
+  invoice_reference: string;
+  lifecycle: string;
+  updated_at: string;
+  research: Omit<CreditResearch, "searches" | "dimensions" | "information_to_obtain"> & {
+    search_count: number;
+    source_count: number;
+  };
+}
+
+export interface ResearchList {
+  items: ResearchCase[];
+  counts: Record<string, number>;
+  next_cursor: number | null;
 }
 
 export interface VisualReview {
@@ -159,7 +183,7 @@ export interface SourceVersion {
   created_at: string;
   declared_issuer: string;
   attributed_to: string | null;
-  structured: Record<string, string> | null;
+  structured: Record<string, unknown> | null;
   text: string | null;
   facts: Fact[];
   has_preview: boolean;
@@ -337,6 +361,16 @@ export interface AgentRun {
   started_at: string;
   ended_at: string | null;
   actions: AgentAction[];
+  activity?: {
+    review_id: string;
+    review_title: string;
+    stage: string;
+    title: string;
+    summary: string;
+    state: string;
+    continues: boolean;
+    cost_known: boolean;
+  };
 }
 
 export interface ExportRecord {

@@ -5,7 +5,7 @@ import {
   Activity,
   BookCheck,
   ChevronsUpDown,
-  FlaskConical,
+  Globe,
   Inbox,
   LayoutList,
   LogOut,
@@ -25,9 +25,9 @@ import { Avatar, Menu, Skeleton, cx } from "@/components/ui/primitives";
 const NAV = [
   { href: "/queue", label: "Work queue", icon: LayoutList },
   { href: "/decisions", label: "Decisions", icon: Inbox, countKey: "open_tasks" as const },
+  { href: "/research", label: "Research", icon: Globe },
   { href: "/operations", label: "Operations", icon: Activity },
   { href: "/policy", label: "Policy", icon: BookCheck },
-  { href: "/evaluation", label: "Evaluation", icon: FlaskConical },
 ];
 
 export function Brand({ inverted = true }: { inverted?: boolean }) {

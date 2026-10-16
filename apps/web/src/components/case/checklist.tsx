@@ -152,7 +152,26 @@ function QuestionRow({
 function PolicyEvidence({ q, onSource }: { q: Question; onSource: (label: string) => void }) {
   const finding = q.metrics.policy_assessment as {
     detail: string;
-    citations: { source_label: string; quote: string }[];
+    citations: { source_label: string; quote: string; page?: number; location?: string }[];
+    calculations?: {
+      id: string;
+      description: string;
+      expression: string;
+      result?: string;
+      unit: string;
+      status: string;
+      error?: string;
+      comparison?: string;
+      expected_result?: string;
+      difference?: string;
+      usage?: string;
+    }[];
+    changes?: {
+      original_source: string;
+      replacement_source: string;
+      summary: string;
+      result: string;
+    }[];
     disposition?: { reviewed_by: string; reason: string } | null;
   };
   return (
@@ -172,9 +191,44 @@ function PolicyEvidence({ q, onSource }: { q: Question; onSource: (label: string
             onClick={() => onSource(citation.source_label)}
           >
             {citation.source_label}
+            {citation.location
+              ? ` · ${citation.location}`
+              : citation.page
+                ? ` · page ${citation.page}`
+                : ""}
           </button>
           “{citation.quote}”
         </blockquote>
+      ))}
+      {finding.calculations?.map((calculation) => (
+        <p key={calculation.id} className="mt-2 rounded-md bg-white p-2 text-ink">
+          {calculation.usage === "comparison_only" && (
+            <span className="text-muted">Previous version · </span>
+          )}
+          <span className="font-medium">{calculation.description}: </span>
+          {calculation.status === "calculated"
+            ? `${calculation.result} ${calculation.unit}`
+            : calculation.error || "Calculation needs review"}
+          {calculation.comparison && (
+            <span
+              className={
+                calculation.comparison === "mismatch" && calculation.usage !== "comparison_only"
+                  ? "text-amber-800"
+                  : "text-muted"
+              }
+            >
+              {` · compared with ${calculation.expected_result} ${calculation.unit} · ${calculation.comparison === "matched" ? "matches" : `difference ${calculation.difference} ${calculation.unit}`}`}
+            </span>
+          )}
+        </p>
+      ))}
+      {finding.changes?.map((change, i) => (
+        <p key={i} className="mt-2 rounded-md bg-white p-2 text-ink">
+          <span className="font-medium">
+            {change.original_source} → {change.replacement_source}:{" "}
+          </span>
+          {change.summary}
+        </p>
       ))}
       {finding.disposition && (
         <p className="mt-2 text-muted">

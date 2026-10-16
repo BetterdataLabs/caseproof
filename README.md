@@ -120,7 +120,7 @@ Explore the remaining features from the bank workspace:
 | Evaluation                 | Open the saved comparison report and inspect its recorded outcomes.                                                                                                            |
 | Demo scenarios             | Open **New case → Demo scenarios**, or **Your documents → Browse the scenario library** for downloadable PDFs and walkthroughs.                                                |
 
-The automatic checklist supports English text-based PDFs with one goods line in SGD, whole-number quantities, and no tax or extra charges. Other documents need reviewer attention. Appearance findings and public company research support review; they do not authenticate documents or approve financing.
+Uploaded documents are reviewed with Gemini using source citations and exact calculation tools. PDFs, scans, PNG/JPEG/TIFF/WebP images, DOCX, XLSX, CSV and text files are supported, including multiple items, decimal quantities, different currencies, taxes, discounts and other charges. Unreadable content or unresolved ambiguity is identified for review. See [Document review](docs/DOCUMENT_REVIEW.md) for the processing flow and limits. Appearance findings and public company research support review; they do not authenticate documents or approve financing.
 
 ## Deploy to Google Cloud
 

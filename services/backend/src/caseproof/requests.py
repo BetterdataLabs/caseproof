@@ -159,6 +159,7 @@ def _fill(
         "delivery_ref": (conditions or {}).get("delivery_ref", "the disputed delivery"),
         "receipt_label": m.get("receipt_label", "the receipt"),
         "policy_title": question.label,
+        "policy_issue": question.detail,
         "policy_criteria": next(
             (r["description"] for r in policy["requirements"] if r["key"] == question.requirement_key), ""
         ),

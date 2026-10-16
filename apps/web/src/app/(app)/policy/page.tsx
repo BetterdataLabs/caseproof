@@ -153,7 +153,6 @@ function Section({
   summary,
   icon,
   children,
-  open = false,
   wide = false,
   fixed = false,
 }: {
@@ -161,13 +160,11 @@ function Section({
   summary: string;
   icon: ReactNode;
   children: ReactNode;
-  open?: boolean;
   wide?: boolean;
   fixed?: boolean;
 }) {
   return (
     <details
-      open={open}
       className={`group self-start overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-card)] ${wide ? "lg:col-span-2" : ""}`}
     >
       <summary className="flex cursor-pointer list-none items-center gap-3 p-4 transition-colors hover:bg-teal-50/40 focus-visible:outline-2 focus-visible:outline-teal-700 sm:p-5 [&::-webkit-details-marker]:hidden">
@@ -264,7 +261,7 @@ export default function PolicyPage() {
     <div className="mx-auto max-w-[1160px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <PageHeader
         title="Policy"
-        description="Set how document reviews work. Publish a new version for new cases; existing cases keep their assigned version."
+        description="Manage document requirements and review settings."
         eyebrow={
           <Badge tone={editing ? "amber" : "teal"} icon={<BookCheck className="size-3" />}>
             {editing
@@ -361,22 +358,6 @@ export default function PolicyPage() {
               then edit the latest version.
             </Callout>
           )}
-          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              ["First reminder", `${d.timers.reminder_after_hours} h`],
-              ["After reminder", `${d.timers.stop_after_reminder_hours} h to escalate`],
-              ["Time per run", `${d.limits.active_seconds_per_invocation} sec`],
-              ["AI budget / case", `USD ${Number(d.limits.case_budget_usd).toFixed(2)}`],
-            ].map(([label, value]) => (
-              <div
-                key={label}
-                className="rounded-xl border border-teal-100 bg-teal-50/70 px-4 py-3"
-              >
-                <p className="text-[11px] text-muted">{label}</p>
-                <p className="mt-1 text-sm font-semibold text-teal-800 tabular">{value}</p>
-              </div>
-            ))}
-          </div>
           <form
             id="policy-editor"
             onSubmit={(e) => {
@@ -395,76 +376,109 @@ export default function PolicyPage() {
               disabled={publish.isPending}
               className="grid items-start gap-4 lg:grid-cols-2 disabled:opacity-60"
             >
-              <Section
-                title="Overview and checklist"
-                summary={`${d.requirements.length} rules · core checks and published review criteria`}
-                icon={<ListChecks className="size-4" />}
-                open
-                wide
+              <section
+                aria-labelledby="policy-requirements"
+                className="overflow-hidden rounded-2xl border border-line bg-white shadow-[var(--shadow-card)] lg:col-span-2"
               >
-                {editing ? (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field
-                      label="Policy name"
-                      htmlFor="policy-name"
-                      hint="Shown to reviewers and in the review summary."
-                    >
-                      <Input
-                        id="policy-name"
-                        value={d.name}
-                        required
-                        maxLength={200}
-                        onChange={(e) =>
-                          edit((n) => {
-                            n.name = e.target.value;
-                          })
-                        }
-                      />
-                    </Field>
-                    <Field
-                      label="Short description"
-                      htmlFor="policy-notice"
-                      hint="Describe the purpose and scope of this review policy."
-                    >
-                      <Input
-                        id="policy-notice"
-                        value={d.notice}
-                        required
-                        maxLength={500}
-                        onChange={(e) =>
-                          edit((n) => {
-                            n.notice = e.target.value;
-                          })
-                        }
-                      />
-                    </Field>
+                <div className="flex items-start gap-3 border-b border-line-soft p-5 sm:gap-4 sm:p-6">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-teal-50 text-teal-700">
+                    <ListChecks className="size-5" aria-hidden />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <h2
+                        id="policy-requirements"
+                        className="text-base font-semibold tracking-tight text-ink sm:text-lg"
+                      >
+                        {d.name}
+                      </h2>
+                      <Badge>
+                        {d.requirements.length}{" "}
+                        {d.requirements.length === 1 ? "requirement" : "requirements"}
+                      </Badge>
+                    </div>
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{d.notice}</p>
                   </div>
-                ) : (
-                  <div>
-                    <p className="text-base font-semibold text-ink">{d.name}</p>
-                    <p className="mt-1 text-xs text-muted">{d.notice}</p>
-                  </div>
-                )}
-                <PolicyRules
-                  rules={d.requirements}
-                  editing={!!editing}
-                  maximum={schema.max_requirements}
-                  onChange={(rules) =>
-                    edit((n) => {
-                      n.requirements = rules;
-                    })
-                  }
-                />
-                <p className="text-xs leading-relaxed text-muted">
-                  <span className="font-semibold text-ink">Supported documents: </span>English text
-                  PDFs, one goods line in SGD, whole-number quantities, no tax or extra charges.
-                  Receipts must acknowledge receipt by the buyer. Additional criteria are assessed
-                  by Gemini against document text; uncertain findings require a reviewer.
-                </p>
-              </Section>
+                </div>
+                <div className="space-y-5 p-5 sm:p-6">
+                  {editing && (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field
+                        label="Policy name"
+                        htmlFor="policy-name"
+                        hint="Shown to reviewers and in the review summary."
+                      >
+                        <Input
+                          id="policy-name"
+                          value={d.name}
+                          required
+                          maxLength={200}
+                          onChange={(e) =>
+                            edit((n) => {
+                              n.name = e.target.value;
+                            })
+                          }
+                        />
+                      </Field>
+                      <Field
+                        label="Short description"
+                        htmlFor="policy-notice"
+                        hint="Describe the purpose and scope of this review policy."
+                      >
+                        <Input
+                          id="policy-notice"
+                          value={d.notice}
+                          required
+                          maxLength={500}
+                          onChange={(e) =>
+                            edit((n) => {
+                              n.notice = e.target.value;
+                            })
+                          }
+                        />
+                      </Field>
+                    </div>
+                  )}
+                  <PolicyRules
+                    rules={d.requirements}
+                    editing={!!editing}
+                    maximum={schema.max_requirements}
+                    onChange={(rules) =>
+                      edit((n) => {
+                        n.requirements = rules;
+                      })
+                    }
+                  />
+                </div>
+                <div className="border-t border-line-soft bg-canvas/50 px-5 py-4 sm:px-6">
+                  <h3 className="mb-3 text-xs font-semibold text-ink">Supported documents</h3>
+                  <dl className="grid gap-4 text-xs sm:grid-cols-[0.8fr_1.4fr_1fr] sm:gap-6">
+                    {[
+                      [
+                        "File formats",
+                        "PDFs, scans, images, Word documents, spreadsheets and text",
+                      ],
+                      [
+                        "Invoice",
+                        "Multiple items, decimal quantities, currencies, taxes and charges",
+                      ],
+                      [
+                        "Delivery evidence",
+                        "Evidence of receipt, including partial and cumulative deliveries",
+                      ],
+                    ].map(([label, value]) => (
+                      <div key={label}>
+                        <dt className="font-medium text-ink">{label}</dt>
+                        <dd className="mt-1 leading-relaxed text-muted">{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </section>
+              <h2 className="mt-4 text-sm font-semibold text-ink lg:col-span-2">Review settings</h2>
               <Section
-                title="Timers and allowances"
-                summary={`${d.limits.automatic_wakeups_per_case} agent runs · ${d.limits.request_rounds} request rounds · ${d.limits.model_calls_per_invocation} AI calls per run`}
+                title="Timing and limits"
+                summary="Reminders, escalation and usage limits"
                 icon={<Clock3 className="size-4" />}
               >
                 {editing ? (
@@ -518,8 +532,8 @@ export default function PolicyPage() {
                 </p>
               </Section>
               <Section
-                title="Request wording"
-                summary={`${Object.keys(d.templates).length} approved templates · filled with document facts`}
+                title="Request templates"
+                summary={`${Object.keys(d.templates).length} templates for document requests`}
                 icon={<Mail className="size-4" />}
               >
                 <p className="text-xs text-muted">
@@ -582,8 +596,8 @@ export default function PolicyPage() {
                 </div>
               </Section>
               <Section
-                title="Documents and corrections"
-                summary="Who supplies evidence and which fields a correction may change"
+                title="Evidence and corrections"
+                summary="Accepted sources and permitted changes"
                 icon={<FileText className="size-4" />}
               >
                 <div className="divide-y divide-line-soft">
@@ -648,7 +662,7 @@ export default function PolicyPage() {
               </Section>
               <Section
                 title="Reviewer decisions"
-                summary="Choose which supported decisions are available for each task"
+                summary="Available actions for each review task"
                 icon={<UserRound className="size-4" />}
               >
                 <p className="text-xs text-muted">
@@ -699,8 +713,8 @@ export default function PolicyPage() {
                 </div>
               </Section>
               <Section
-                title="Agent authority"
-                summary="Supported actions and the boundaries of this application"
+                title="Automation permissions"
+                summary="Actions the system is permitted to take"
                 icon={<ShieldCheck className="size-4" />}
                 fixed
                 wide

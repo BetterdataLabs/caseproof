@@ -216,6 +216,7 @@ class ParseResult:
     page_count: int = 0
     reject_code: str | None = None
     reject_detail: str = ""
+    structured: dict[str, Any] = field(default_factory=dict)
 
     def value(self, name: str) -> str | None:
         for fact in self.facts:
@@ -435,6 +436,7 @@ def render_preview(data: bytes, page_index: int, scale: float = 1.6) -> bytes:
 
 def _render_preview(data: bytes, page_index: int, scale: float) -> bytes:
     document = pdfium.PdfDocument(data)
+    page = bitmap = image = None
     try:
         page = document[page_index]
         scale = min(scale, 2000 / max(page.get_size()))
@@ -442,7 +444,12 @@ def _render_preview(data: bytes, page_index: int, scale: float) -> bytes:
         image = bitmap.to_pil()
         out = io.BytesIO()
         image.save(out, format="PNG", optimize=True)
-        page.close()
         return out.getvalue()
     finally:
+        if image is not None:
+            image.close()
+        if bitmap is not None:
+            bitmap.close()
+        if page is not None:
+            page.close()
         document.close()

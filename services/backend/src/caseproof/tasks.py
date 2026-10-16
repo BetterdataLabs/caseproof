@@ -318,7 +318,9 @@ def decide(
             raise Unsupported(
                 "WRONG_SOURCE", "This action only excludes the rejected documents cited by this task."
             )
-        if any(result.result != "pass" for result in compute_checks(session, case).values()):
+        if case.scenario_key != "uploaded" and any(
+            result.result != "pass" for result in compute_checks(session, case).values()
+        ):
             raise Conflict(
                 "CHECKS_INCOMPLETE", "The remaining evidence must satisfy every checklist question first."
             )
@@ -472,7 +474,7 @@ def _dispute_conditions(session: Session, case: Case, params: dict[str, Any]) ->
         claimed = Decimal(str(params.get("claimed_quantity")))
     except Exception as exc:
         raise Unsupported("CONDITIONS_REQUIRED", "Record the disputed quantity as a number.") from exc
-    if not receipt_number or not delivery_ref or claimed <= 0 or claimed != claimed.to_integral_value():
+    if not receipt_number or not delivery_ref or not claimed.is_finite():
         raise Unsupported("CONDITIONS_REQUIRED", "Record the receipt, delivery and the disputed quantity.")
     from .models import Document
 

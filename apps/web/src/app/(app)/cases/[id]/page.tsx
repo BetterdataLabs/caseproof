@@ -165,7 +165,7 @@ export default function CasePage({ params }: { params: Promise<{ id: string }> }
               value={tab}
               onValueChange={setTab}
               tabs={[
-                { value: "activity", label: "Activity", count: detail.runs.length },
+                { value: "activity", label: "Activity" },
                 {
                   value: "exchange",
                   label: "Requests & replies",

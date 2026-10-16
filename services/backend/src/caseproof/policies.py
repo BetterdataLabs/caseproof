@@ -15,6 +15,7 @@ from .config import get_settings
 from .errors import Conflict, NotFound, Unsupported
 from .history import record, utcnow
 from .models import OrgControl, PolicyVersion
+from .review_defaults import current_requirements
 
 # Metadata is shared with the editor; hard ceilings bound what this implementation supports.
 MAX_RUN_SECONDS = 180
@@ -22,7 +23,7 @@ MAX_REQUIREMENTS = 10
 CORE_KEYS = {"invoice_total", "delivery_receipts"}
 POLICY_EVIDENCE_TEMPLATE = {
     "label": "Evidence for a policy requirement",
-    "text": "Please provide supporting documents or clarification for invoice {invoice_number} to satisfy this requirement: {policy_title}. Review criteria: {policy_criteria}.",
+    "text": "Please provide supporting documents or clarification for invoice {invoice_number} to address {policy_title}: {policy_issue}",
 }
 SETTING_FIELDS = {
     "reminder_after_hours": (
@@ -135,6 +136,10 @@ RUNTIME_FIELDS = {
 
 def definition_for(policy: PolicyVersion) -> dict[str, Any]:
     definition = deepcopy(policy.definition)
+    definition["requirements"] = current_requirements(definition)
+    definition["supported_contract"] = (
+        "Business documents in supported file formats; interpreted using their stated currencies, units, line items and adjustments."
+    )
     settings = get_settings()
     # Existing v1 cases retain their deployed behaviour. Versions published by the editor pin settings.
     if not definition.get("runtime_limits_version"):

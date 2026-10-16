@@ -22,7 +22,7 @@ const DECISION_HELP: Record<string, string> = {
   accept_policy_review:
     "Explain how the current documents satisfy this criterion. Your interpretation is saved for this policy and evidence set; new evidence requires another assessment. Core calculations still apply.",
   exclude_rejected_document:
-    "Explain why this rejected file is not needed. It stays in history and counts toward no check. The accepted invoice and receipt evidence must satisfy the checklist independently.",
+    "Explain why this rejected file is not needed. It stays in history. The checklist will run again using the remaining evidence; exclusion does not satisfy a requirement.",
   accept_document_appearance:
     "Record how you checked the highlighted findings, reference template and issuer's explanation. This covers only this document version's appearance; invoice and delivery checks still apply. It is not a certification of authenticity.",
   retain_dispute_request_evidence:
@@ -112,7 +112,8 @@ export function DecisionPanel({
   const valid =
     reason.trim().length >= 5 &&
     (!needsInterpretation || interpretation.trim().length >= 5) &&
-    (!needsConditions || (receipt && delivery && Number(quantity) > 0));
+    (!needsConditions ||
+      (receipt && delivery && quantity.trim() !== "" && Number.isFinite(Number(quantity))));
 
   return (
     <section
@@ -372,9 +373,9 @@ export function DecisionPanel({
                 >
                   <Input
                     id="c-qty"
-                    inputMode="numeric"
+                    inputMode="decimal"
                     value={quantity}
-                    onChange={(e) => setQuantity(e.target.value.replace(/[^0-9]/g, ""))}
+                    onChange={(e) => setQuantity(e.target.value)}
                     placeholder="80"
                   />
                 </Field>
@@ -494,6 +495,6 @@ function suggestConditions(
   return {
     receipt_number: receiptDoc?.number,
     delivery_ref: claim.delivery_ref ?? undefined,
-    claimed_quantity: claim.quantity?.replace(/[^0-9]/g, "") || undefined,
+    claimed_quantity: claim.quantity?.trim() || undefined,
   };
 }

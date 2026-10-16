@@ -174,9 +174,9 @@ export function CaseHeader({ detail, onOpenTask }: { detail: CaseDetail; onOpenT
           tip="The saved version of the whole case. This number increases when evidence, checks or decisions change."
         />
         <Meta
-          label="Agent runs"
+          label="Processing steps"
           value={`${c.budget.wakeups_used} of ${c.budget.wakeups_max}`}
-          tip="How many times the agent has started work on this case, out of its allowed limit. Waiting does not use runs."
+          tip="Saved stages of document reading, checks and follow-up, out of this case’s allowed limit. Waiting for a reply does not use steps."
         />
         <Meta
           label={detail.case.credit_research?.enabled ? "AI & search spend (est.)" : "Model spend"}

@@ -1,0 +1,1453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CaseProof · Work queue visual options</title>
+<style>
+  /* Palette validated with the dataviz validator (adjacent pairs + donut wrap pair), light on #ffffff and dark on #1a1a19. */
+  .viz-root {
+    color-scheme: light;
+    --page: #f4f6f5;
+    --surface: #ffffff;
+    --text-primary: #16323b;
+    --text-secondary: #52626a;
+    --text-muted: #7d8a90;
+    --grid: #e3e8e6;
+    --baseline: #c9d1ce;
+    --border: rgba(16, 42, 51, 0.10);
+    --accent: #255f57;
+    --accent-ink: #ffffff;
+    --wash: rgba(16, 42, 51, 0.04);
+    --s-needs_decision: #eda100;
+    --s-working: #2a78d6;
+    --s-waiting_customer: #e87ba4;
+    --s-paused: #6250d6;
+    --s-complete: #1baf7a;
+    --on-needs_decision: #0b0b0b;
+    --on-working: #ffffff;
+    --on-waiting_customer: #0b0b0b;
+    --on-paused: #ffffff;
+    --on-complete: #0b0b0b;
+    --good: #0ca30c;
+    --warning: #fab219;
+    --critical: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --accent: #3f8f84;
+      --wash: rgba(255, 255, 255, 0.05);
+      --s-needs_decision: #c98500;
+      --s-working: #3987e5;
+      --s-waiting_customer: #d55181;
+      --s-paused: #9085e9;
+      --s-complete: #199e70;
+      --on-needs_decision: #0b0b0b;
+      --on-working: #0b0b0b;
+      --on-waiting_customer: #0b0b0b;
+      --on-paused: #0b0b0b;
+      --on-complete: #0b0b0b;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --accent: #3f8f84;
+    --wash: rgba(255, 255, 255, 0.05);
+    --s-needs_decision: #c98500;
+    --s-working: #3987e5;
+    --s-waiting_customer: #d55181;
+    --s-paused: #9085e9;
+    --s-complete: #199e70;
+    --on-needs_decision: #0b0b0b;
+    --on-working: #0b0b0b;
+    --on-waiting_customer: #0b0b0b;
+    --on-paused: #0b0b0b;
+    --on-complete: #0b0b0b;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .viz-root {
+    min-height: 100vh;
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 40px 28px 80px; }
+  h1 { font-size: 34px; line-height: 1.15; margin: 0 0 10px; letter-spacing: -0.02em; }
+  h2 { font-size: 20px; margin: 0; letter-spacing: -0.01em; }
+  h3 { font-size: 14px; margin: 0 0 6px; color: var(--text-secondary); font-weight: 600; }
+  p { margin: 0; }
+  .lede { color: var(--text-secondary); max-width: 820px; }
+  .muted { color: var(--text-muted); }
+
+  /* One control row scopes every option below it. */
+  .controls {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    margin: 24px -28px 28px; padding: 12px 28px;
+    background: color-mix(in srgb, var(--page) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  button.btn {
+    font: inherit; font-size: 14px; font-weight: 600;
+    border-radius: 10px; padding: 8px 14px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-primary);
+  }
+  button.btn:hover { background: var(--wash); }
+  button.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  button.btn.primary:hover { filter: brightness(1.08); }
+  button.btn[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .event { flex: 1 1 0; min-width: 0; font-size: 13px; color: var(--text-secondary); margin-left: 6px; min-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .event strong { color: var(--text-primary); }
+
+  .recommend {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 18px 22px; margin-bottom: 28px; display: grid; gap: 6px;
+  }
+  .recommend ul { margin: 4px 0 0; padding-left: 18px; color: var(--text-secondary); }
+
+  .option {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+    padding: 26px; margin-bottom: 26px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .option-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+  .chip {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 999px; background: var(--wash); color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+  .option-sub { color: var(--text-secondary); margin-bottom: 22px; max-width: 860px; }
+  .notes { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--grid); }
+  .notes ul { margin: 0; padding-left: 18px; color: var(--text-secondary); font-size: 14px; }
+  @media (max-width: 760px) { .notes { grid-template-columns: 1fr; } }
+
+  /* Shared legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; color: var(--text-secondary); }
+  .legend-item { display: inline-flex; align-items: center; gap: 7px; }
+  .legend-item b { color: var(--text-primary); font-weight: 600; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+
+  /* Option A: gauges */
+  .gauges { display: grid; grid-template-columns: 1.25fr 1fr; gap: 26px; align-items: stretch; }
+  @media (max-width: 900px) { .gauges { grid-template-columns: 1fr; } }
+  .gauge-card { border: 1px solid var(--grid); border-radius: 14px; padding: 18px 18px 14px; display: flex; flex-direction: column; align-items: center; }
+  .gauge-card h3 { align-self: flex-start; }
+  .gauge-card svg { width: 100%; max-width: 380px; height: auto; overflow: visible; }
+  .needle { transition: transform 900ms cubic-bezier(.34, 1.35, .64, 1); }
+  .meter-value { transition: stroke-dasharray 800ms ease; }
+  .hero { font-size: 48px; font-weight: 700; line-height: 1; letter-spacing: -0.03em; }
+  .hero-sub { color: var(--text-secondary); font-size: 14px; margin-top: 6px; text-align: center; }
+  .zone-key { display: flex; gap: 16px; font-size: 12px; color: var(--text-secondary); margin-top: 12px; }
+  .zone-key span { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* Option B: pipeline bar */
+  .pipeline-hero { display: flex; gap: 34px; margin-bottom: 18px; flex-wrap: wrap; }
+  .pipeline-hero .hero { font-size: 40px; }
+  .pipeline-hero .label { font-size: 13px; color: var(--text-secondary); }
+  .stack { display: flex; height: 30px; border-radius: 4px; overflow: hidden; margin-bottom: 14px; }
+  .seg {
+    flex: 0 0 0; min-width: 0; margin-left: 2px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; cursor: default;
+    transition: flex-grow 700ms ease;
+  }
+  .seg.first { margin-left: 0; }
+  .seg.empty { margin-left: 0; }
+  .seg:hover, .seg:focus-visible { filter: brightness(1.08); outline: none; }
+  .seg .seg-label { white-space: nowrap; pointer-events: none; transition: opacity 200ms; }
+  .scale { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin: -6px 0 16px; font-variant-numeric: tabular-nums; }
+
+  /* Option C: donut */
+  .donut-layout { display: grid; grid-template-columns: 300px 1fr; gap: 36px; align-items: center; }
+  @media (max-width: 760px) { .donut-layout { grid-template-columns: 1fr; justify-items: center; } }
+  .donut-layout svg { width: 280px; height: 280px; }
+  .ring { transition: stroke-dasharray 700ms ease, stroke-dashoffset 700ms ease, opacity 200ms; cursor: default; }
+  .ring.dim { opacity: 0.25; }
+  .donut-legend { display: grid; gap: 4px; }
+  .donut-row {
+    display: grid; grid-template-columns: 14px 1fr 48px 56px; gap: 12px; align-items: center;
+    padding: 9px 12px; border-radius: 10px; font-size: 14px; cursor: default;
+  }
+  .donut-row:hover, .donut-row:focus-visible { background: var(--wash); outline: none; }
+  .donut-row .n { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+  .donut-row .pct { color: var(--text-muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .donut-row .desc { color: var(--text-muted); font-size: 12.5px; display: block; }
+
+  /* Option D: live flow */
+  .flow-stage { position: relative; }
+  .lanes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  @media (max-width: 900px) { .lanes { grid-template-columns: repeat(2, 1fr); } }
+  .lane { border: 1px solid var(--grid); border-radius: 14px; padding: 12px; background: var(--surface); }
+  .lane-head { display: flex; align-items: flex-start; min-height: 40px; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+  .lane-head .n { margin-left: auto; font-size: 22px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+  .lane-body { min-height: 120px; margin-top: 12px; border-radius: 10px; background: var(--wash); }
+  .case-dot {
+    position: absolute; left: 0; top: 0; width: 24px; height: 24px; padding: 0; border: 0;
+    background: transparent; cursor: pointer; border-radius: 50%;
+    transition: transform 800ms cubic-bezier(.45, 0, .2, 1), opacity 400ms;
+  }
+  .case-dot::before {
+    content: ""; position: absolute; inset: 4px; border-radius: 50%;
+    background: var(--c); box-shadow: 0 0 0 2px var(--surface);
+    transition: background 400ms;
+  }
+  .case-dot:hover::before, .case-dot:focus-visible::before { inset: 2px; }
+  .case-dot:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 1px; }
+  .case-dot.pulse::after {
+    content: ""; position: absolute; inset: -4px; border-radius: 50%;
+    border: 2px solid var(--c); animation: pulse 1.4s ease-out 2;
+  }
+  .case-dot.entering { opacity: 0; }
+  @keyframes pulse { from { transform: scale(0.6); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+  .flow-hint { font-size: 13px; color: var(--text-muted); margin-top: 12px; }
+
+  /* Option E: enhanced tiles */
+  .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  @media (max-width: 1000px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+  .tile {
+    border: 1px solid var(--grid); border-radius: 16px; padding: 18px; position: relative;
+    transition: box-shadow 400ms, border-color 400ms;
+  }
+  .tile.flash { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent); }
+  .tile-top { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+  .tile-top svg { margin-left: auto; width: 20px; height: 20px; color: var(--text-muted); }
+  .tile .count { font-size: 44px; font-weight: 700; line-height: 1.1; margin: 8px 0 10px; letter-spacing: -0.02em; }
+  .tile .count.zero { color: var(--text-muted); }
+  .tile-meter { height: 6px; border-radius: 3px; background: var(--grid); overflow: hidden; }
+  .tile-meter i { display: block; height: 100%; border-radius: 3px; background: var(--c); width: 0; transition: width 700ms ease; }
+  .tile .share { font-size: 12px; color: var(--text-muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .tile .hint { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
+  .spin { animation: spin 1.2s linear infinite; transform-origin: center; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Table view */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  details summary { cursor: pointer; font-weight: 600; margin: 18px 0 8px; }
+  .state-cell { display: inline-flex; align-items: center; gap: 8px; }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed; z-index: 50; pointer-events: none; max-width: 300px;
+    background: var(--surface); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14); font-size: 13px; opacity: 0; transition: opacity 120ms;
+  }
+  .tooltip.show { opacity: 1; }
+  .tooltip .tt-value { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .tooltip .tt-key { width: 12px; height: 3px; border-radius: 2px; flex: none; }
+  .tooltip .tt-line { color: var(--text-secondary); margin-top: 2px; }
+
+  footer { color: var(--text-muted); font-size: 13px; margin-top: 30px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .needle, .meter-value, .seg, .ring, .case-dot, .tile-meter i { transition: none !important; }
+    .spin, .case-dot.pulse::after { animation: none !important; }
+  }
+</style>
+<style>
+  /* Part 2: leader views (F–I). Added beneath the original options; nothing above is changed. */
+  .viz-root {
+    --s-bank: #255f57;
+    --s-other: #c9d1ce;
+    --s-agent: #2a78d6;
+    --s-people: #eda100;
+    --s-issue: #255f57;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      --s-bank: #3fae9f;
+      --s-other: #4a4a46;
+      --s-agent: #3987e5;
+      --s-people: #c98500;
+      --s-issue: #3fae9f;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    --s-bank: #3fae9f;
+    --s-other: #4a4a46;
+    --s-agent: #3987e5;
+    --s-people: #c98500;
+    --s-issue: #3fae9f;
+  }
+
+  .part-divider { margin: 64px 0 28px; padding-top: 36px; border-top: 2px solid var(--grid); }
+  .part-divider .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+  .part-divider h1 { margin-top: 6px; }
+
+  .think { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 900px) { .think { grid-template-columns: 1fr; } }
+  .think-block { border: 1px solid var(--grid); border-radius: 14px; padding: 18px 20px; }
+  .think-block ol, .think-block ul { margin: 6px 0 0; padding-left: 20px; color: var(--text-secondary); font-size: 14px; }
+  .think-block li { margin-bottom: 6px; }
+  .think-block li strong { color: var(--text-primary); }
+  .think-wide { grid-column: 1 / -1; }
+
+  /* F: executive brief */
+  .brief-date { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+  .brief-headline { font-size: 23px; line-height: 1.4; font-weight: 600; letter-spacing: -0.01em; max-width: 980px; margin-bottom: 22px; }
+  .brief-headline { color: var(--text-secondary); }
+  .brief-headline em { font-style: normal; color: var(--text-primary); }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 1000px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { border: 1px solid var(--grid); border-radius: 14px; padding: 16px 18px; }
+  .kpi .k-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+  .kpi .k-value { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; margin: 6px 0 4px; }
+  .kpi .k-sub { font-size: 13px; color: var(--text-muted); }
+  .act { margin-top: 22px; }
+  .act-row {
+    display: grid; grid-template-columns: 22px 150px 1fr 130px; gap: 12px; align-items: center;
+    padding: 11px 12px; border-radius: 10px; border: 1px solid var(--grid); margin-top: 8px; font-size: 14px;
+  }
+  .act-row .rank { font-weight: 700; color: var(--text-muted); }
+  .act-row .ref { font-family: ui-monospace, "JetBrains Mono", monospace; font-size: 13px; }
+  .act-row .why { color: var(--text-secondary); }
+  .act-row .why b { color: var(--text-primary); font-weight: 600; display: block; }
+  .act-row .val { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .act-row .tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+  .brief-actions { display: flex; gap: 10px; align-items: center; margin-top: 16px; }
+  .copied { font-size: 13px; color: var(--text-muted); }
+
+  /* G: money by owner (emphasis bars) */
+  .money { display: grid; gap: 14px; }
+  .money-row { display: grid; grid-template-columns: 230px 1fr; gap: 16px; align-items: center; cursor: default; }
+  .money-row:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 4px; border-radius: 6px; }
+  .money-row .m-label { font-size: 14px; font-weight: 600; }
+  .money-row .m-label span { display: block; font-size: 12.5px; color: var(--text-muted); font-weight: 400; }
+  .m-track { display: flex; align-items: center; gap: 10px; }
+  .m-bar { height: 24px; border-radius: 0 4px 4px 0; background: var(--c); min-width: 2px; transition: width 700ms ease; }
+  .m-val { font-size: 14px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .m-note { margin-top: 16px; font-size: 13px; color: var(--text-muted); }
+
+  /* H: controls scorecard */
+  .score-head { display: flex; gap: 34px; flex-wrap: wrap; margin-bottom: 18px; }
+  .score-head .label { font-size: 13px; color: var(--text-secondary); }
+  .score { display: grid; gap: 2px; }
+  .score-row { display: grid; grid-template-columns: 290px 1fr 120px; gap: 16px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--grid); }
+  .score-row .s-name { font-size: 14px; font-weight: 600; }
+  .score-row .s-name span { display: block; font-size: 12.5px; color: var(--text-muted); font-weight: 400; }
+  .score-row .s-count { text-align: right; font-size: 13px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .score-row .s-count b { color: var(--text-primary); font-size: 15px; }
+  .issue-dots { display: flex; flex-wrap: wrap; gap: 2px; }
+  .issue-dot { width: 24px; height: 24px; border: 0; padding: 0; background: transparent; position: relative; cursor: pointer; border-radius: 50%; }
+  .issue-dot::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--s-issue); transition: background 300ms; }
+  .issue-dot.open::before { background: transparent; box-shadow: inset 0 0 0 2px var(--s-issue); }
+  .issue-dot:hover::before, .issue-dot:focus-visible::before { inset: 4px; }
+  .issue-dot:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 1px; }
+  .score-legend { display: flex; gap: 18px; font-size: 12.5px; color: var(--text-secondary); margin-top: 14px; }
+  .score-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -2px; margin-right: 6px; background: var(--s-issue); }
+  .score-legend i.hollow { background: transparent; box-shadow: inset 0 0 0 2px var(--s-issue); }
+  @media (max-width: 900px) { .score-row { grid-template-columns: 1fr; } .score-row .s-count { text-align: left; } }
+
+  /* I: value of the agent */
+  .value-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 22px; }
+  @media (max-width: 900px) { .value-grid { grid-template-columns: 1fr; } }
+  .v-card { border: 1px solid var(--grid); border-radius: 14px; padding: 18px 20px; }
+  .split { display: flex; height: 24px; border-radius: 4px; overflow: hidden; margin: 14px 0 10px; }
+  .split div { transition: flex-grow 700ms ease; flex: 0 0 0; min-width: 0; }
+  .split div + div { margin-left: 2px; }
+  .v-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  .v-stats .k-value { font-size: 24px; font-weight: 700; }
+  .v-stats .k-sub { font-size: 12.5px; color: var(--text-muted); }
+  .assume { display: grid; gap: 10px; margin: 12px 0 16px; font-size: 13.5px; color: var(--text-secondary); }
+  .assume label { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .assume input {
+    width: 72px; font: inherit; font-size: 14px; padding: 5px 8px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--page); color: var(--text-primary); text-align: right;
+  }
+  .saved { font-size: 44px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+  .assume-badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-muted); margin-left: 8px; vertical-align: 3px; }
+
+  .combo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 8px; }
+  @media (max-width: 900px) { .combo { grid-template-columns: 1fr; } }
+  .combo div { border: 1px solid var(--grid); border-radius: 12px; padding: 14px 16px; font-size: 14px; color: var(--text-secondary); }
+  .combo b { color: var(--text-primary); display: block; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+<div class="wrap">
+  <h1>Work queue: visual options</h1>
+  <p class="lede">Five ways to show the work queue counts that currently appear as plain number tiles. Every option uses the same
+    live snapshot of the demo workspace (20 cases, 15 October 2026). Press <strong>Simulate activity</strong> to watch cases move
+    between states and see how each option reacts.</p>
+
+  <div class="controls" role="toolbar" aria-label="Demo controls">
+    <button class="btn primary" id="step">Simulate activity</button>
+    <button class="btn" id="auto" aria-pressed="false">Auto-play</button>
+    <button class="btn" id="reset">Reset to snapshot</button>
+    <span class="event" id="event" aria-live="polite">Showing the live snapshot.</span>
+    <button class="btn" id="theme">Dark mode</button>
+  </div>
+
+  <section class="recommend" aria-label="Recommendation">
+    <h2>How to read this page</h2>
+    <ul>
+      <li><strong>A (speedometer)</strong> is the most eye-catching. It works for one headline ratio, such as how much of the open work is waiting on the bank.</li>
+      <li><strong>B (pipeline bar)</strong> and <strong>C (donut)</strong> show how all cases split across the five states.</li>
+      <li><strong>D (live flow)</strong> shows each case as a dot moving between states. It's the most dynamic option.</li>
+      <li><strong>E (enhanced tiles)</strong> is the smallest change to the current screen and the quickest to build.</li>
+      <li>Options can be combined. For example, A as a header with E below it.</li>
+    </ul>
+  </section>
+
+  <!-- Option A -->
+  <section class="option" aria-labelledby="a-title">
+    <div class="option-head"><span class="chip">Option A</span><h2 id="a-title">Speedometers: reviewer pressure and completion</h2></div>
+    <p class="option-sub">The left dial's needle shows how much of the open work is waiting on a person (needs a decision or paused).
+      The right dial shows how much of the queue is finished. The needle swings when the numbers change.</p>
+    <div class="gauges">
+      <div class="gauge-card">
+        <h3>Needs a person</h3>
+        <svg viewBox="0 0 300 190" role="img" aria-labelledby="g1-desc">
+          <desc id="g1-desc">Gauge showing the share of open cases that need a person.</desc>
+          <g id="g1-zones"></g>
+          <g id="g1-ticks"></g>
+          <g transform="translate(150 160)">
+            <g class="needle" id="g1-needle">
+              <line x1="0" y1="0" x2="0" y2="-104" stroke="var(--text-primary)" stroke-width="3" stroke-linecap="round"/>
+            </g>
+            <circle r="8" fill="var(--text-primary)" stroke="var(--surface)" stroke-width="2"/>
+          </g>
+        </svg>
+        <div class="hero" id="g1-hero">0%</div>
+        <div class="hero-sub" id="g1-sub"></div>
+        <div class="zone-key" aria-hidden="true">
+          <span><i class="swatch" style="background:var(--good)"></i>Calm (under 33%)</span>
+          <span><i class="swatch" style="background:var(--warning)"></i>Busy</span>
+          <span><i class="swatch" style="background:var(--critical)"></i>Overloaded (over 66%)</span>
+        </div>
+      </div>
+      <div class="gauge-card">
+        <h3>Review complete</h3>
+        <svg viewBox="0 0 300 190" role="img" aria-labelledby="g2-desc">
+          <desc id="g2-desc">Meter showing the share of all cases with a completed review.</desc>
+          <path id="g2-track" fill="none" stroke="var(--grid)" stroke-width="18" stroke-linecap="round" pathLength="100"/>
+          <path id="g2-value" class="meter-value" fill="none" stroke="var(--s-complete)" stroke-width="18" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/>
+          <text x="40" y="184" text-anchor="middle" font-size="12" fill="var(--text-muted)">0%</text>
+          <text x="260" y="184" text-anchor="middle" font-size="12" fill="var(--text-muted)">100%</text>
+        </svg>
+        <div class="hero" id="g2-hero">0%</div>
+        <div class="hero-sub" id="g2-sub"></div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><h3>Works well for</h3><ul><li>A leadership view or a wall screen</li><li>One question answered at a glance: are we keeping up?</li></ul></div>
+      <div><h3>Watch out for</h3><ul><li>A dial shows only one ratio, so the five individual counts disappear</li><li>The calm, busy and overloaded thresholds are placeholders that need agreeing</li></ul></div>
+    </div>
+  </section>
+
+  <!-- Option B -->
+  <section class="option" aria-labelledby="b-title">
+    <div class="option-head"><span class="chip">Option B</span><h2 id="b-title">Pipeline bar</h2></div>
+    <p class="option-sub">One bar covers every case, split by state. Each segment's length is its share of the queue, and segments grow or shrink as cases move.</p>
+    <div class="pipeline-hero">
+      <div><div class="hero" id="b-open">0</div><div class="label">open cases</div></div>
+      <div><div class="hero" id="b-person">0</div><div class="label">need a person</div></div>
+      <div><div class="hero" id="b-done">0</div><div class="label">complete</div></div>
+    </div>
+    <div class="stack" id="b-stack" role="img" aria-label="Cases by state, stacked bar"></div>
+    <div class="scale"><span>0</span><span id="b-total">20 cases</span></div>
+    <div class="legend" id="b-legend"></div>
+    <div class="notes">
+      <div><h3>Works well for</h3><ul><li>Shows the whole queue, with every state in proportion</li><li>Fits in a thin strip above the existing case table</li></ul></div>
+      <div><h3>Watch out for</h3><ul><li>Small segments are too narrow for a label; hovering or the legend shows their count</li><li>Less striking than a dial</li></ul></div>
+    </div>
+  </section>
+
+  <!-- Option C -->
+  <section class="option" aria-labelledby="c-title">
+    <div class="option-head"><span class="chip">Option C</span><h2 id="c-title">Donut with headline</h2></div>
+    <p class="option-sub">A ring split by state, with the total and the completion rate in the centre. Hovering a state highlights its slice.</p>
+    <div class="donut-layout">
+      <svg viewBox="0 0 200 200" role="img" aria-labelledby="c-desc">
+        <desc id="c-desc">Donut chart of cases by state.</desc>
+        <circle cx="100" cy="100" r="72" fill="none" stroke="var(--grid)" stroke-width="22"/>
+        <g id="c-rings" transform="rotate(-90 100 100)"></g>
+        <text x="100" y="98" text-anchor="middle" font-size="40" font-weight="700" fill="var(--text-primary)" id="c-total">0</text>
+        <text x="100" y="118" text-anchor="middle" font-size="12" fill="var(--text-secondary)">cases in queue</text>
+        <text x="100" y="136" text-anchor="middle" font-size="11.5" fill="var(--text-muted)" id="c-pct"></text>
+      </svg>
+      <div class="donut-legend" id="c-legend"></div>
+    </div>
+    <div class="notes">
+      <div><h3>Works well for</h3><ul><li>Familiar and appealing; the total is front and centre</li><li>The legend shows the exact counts</li></ul></div>
+      <div><h3>Watch out for</h3><ul><li>Slices of similar size (such as 4 and 5) are hard to compare by eye</li><li>Takes more space than option B for the same information</li></ul></div>
+    </div>
+  </section>
+
+  <!-- Option D -->
+  <section class="option" aria-labelledby="d-title">
+    <div class="option-head"><span class="chip">Option D</span><h2 id="d-title">Live case flow</h2></div>
+    <p class="option-sub">Every case is a dot. When the agent finishes, the business replies or a reviewer decides, its dot moves to the new state.
+      Hover or tab to a dot to see the case and its next action.</p>
+    <div class="flow-stage" id="d-stage">
+      <div class="lanes" id="d-lanes"></div>
+    </div>
+    <p class="flow-hint">The most recently changed case pulses. Moves are animated so you can follow a case.</p>
+    <div class="notes">
+      <div><h3>Works well for</h3><ul><li>The most dynamic option: you can see the agent at work</li><li>Every case can be reached directly, a good bridge to the case list</li></ul></div>
+      <div><h3>Watch out for</h3><ul><li>Gets crowded beyond about 60 cases (would switch to grouped counts)</li><li>Movement can distract on a screen people work in all day</li></ul></div>
+    </div>
+  </section>
+
+  <!-- Option E -->
+  <section class="option" aria-labelledby="e-title">
+    <div class="option-head"><span class="chip">Option E</span><h2 id="e-title">Enhanced tiles</h2></div>
+    <p class="option-sub">Today's five tiles, each with a small bar for its share of the queue and an animated count. The tile highlights briefly when its count changes,
+      and the Agent working icon spins while the agent is busy.</p>
+    <div class="tiles" id="e-tiles"></div>
+    <div class="notes">
+      <div><h3>Works well for</h3><ul><li>The smallest change, which keeps the existing layout and click-to-filter</li><li>Every count stays readable</li></ul></div>
+      <div><h3>Watch out for</h3><ul><li>The least dramatic option, so it may not be the "wow" the lead is after</li><li>Shares across five tiles are harder to compare than in a single bar</li></ul></div>
+    </div>
+  </section>
+
+  <!-- Table view -->
+  <section class="option" aria-labelledby="t-title">
+    <div class="option-head"><span class="chip">Data</span><h2 id="t-title">Table view</h2></div>
+    <p class="option-sub">The same numbers behind every option above, so values never depend on hover or colour.</p>
+    <table>
+      <thead><tr><th>State</th><th>What it means</th><th class="num">Cases</th><th class="num">Share</th></tr></thead>
+      <tbody id="t-body"></tbody>
+    </table>
+    <details>
+      <summary>All cases</summary>
+      <table>
+        <thead><tr><th>Case</th><th>Seller</th><th>Invoice</th><th>State</th><th>Next action</th></tr></thead>
+        <tbody id="t-cases"></tbody>
+      </table>
+    </details>
+  </section>
+
+  <footer>Send feedback by option letter (A–E), including any combination you'd like. Colours are checked for colour-blind readers in both light and dark mode.</footer>
+
+  <!-- ===================== Part 2: designs for a leader ===================== -->
+  <div class="part-divider" id="leaders">
+    <div class="eyebrow">Part 2</div>
+    <h1>Views for a leader</h1>
+    <p class="lede">Options A–E answer a reviewer's question: what do I work on next? A leader looking at the app asks different questions.
+      This part explains the thinking, then offers four designs (F–I) built for that audience. They use the same live data and the same
+      <strong>Simulate activity</strong> controls at the top of the page.</p>
+  </div>
+
+  <section class="option" aria-labelledby="think-title">
+    <div class="option-head"><span class="chip">Thinking out loud</span><h2 id="think-title">What a leader needs from this screen</h2></div>
+    <p class="option-sub">A head of trade operations, a credit risk lead or a judge reviewing the product spends maybe 30 seconds here.
+      They won't open individual cases. They want to know whether the operation is healthy, where the risk is, and whether the agent is worth it.</p>
+    <div class="think">
+      <div class="think-block">
+        <h3>The five questions a leader asks</h3>
+        <ol>
+          <li><strong>How much money is moving, and how much is stuck?</strong> Leaders think in exposure (SGD), not case counts. Ten small cases matter less than one large one.</li>
+          <li><strong>Who is holding things up?</strong> Us (the bank), the business, or the agent? Only the first is the leader's problem to fix.</li>
+          <li><strong>Can I trust the agent?</strong> Show what it caught and confirm nothing was cleared with an open issue. This is the hardest question to answer and the most important.</li>
+          <li><strong>Is it worth it?</strong> Cost per case, speed, and how much reviewer time it saves.</li>
+          <li><strong>What should I do today?</strong> One short, ranked list, not a queue.</li>
+        </ol>
+      </div>
+      <div class="think-block">
+        <h3>Design rules that follow from that</h3>
+        <ul>
+          <li><strong>Lead with the answer.</strong> Open with a sentence that says what the numbers mean before any chart. It can be copied straight into an email or a slide.</li>
+          <li><strong>Money first, counts second.</strong> Every count gets a value beside it.</li>
+          <li><strong>Show exceptions, not inventory.</strong> Highlight the one bar that needs action and grey out the rest.</li>
+          <li><strong>Show evidence, not just a confidence score.</strong> For trust, show what was caught, one dot per real case, rather than a single "accuracy" number.</li>
+          <li><strong>Label assumptions.</strong> Anything estimated, such as time saved, is an editable input with a visible "assumption" badge.</li>
+        </ul>
+      </div>
+      <div class="think-block think-wide">
+        <h3>What I deliberately left out</h3>
+        <ul>
+          <li><strong>Trend lines and "vs last week" figures.</strong> The demo has a single day of history, so any trend would be made up. Add them once there's real history.</li>
+          <li><strong>A single "AI accuracy %" dial.</strong> It invites the question "accurate compared to what?" The controls scorecard (H) answers the trust question with real cases.</li>
+          <li><strong>Targets (SLAs).</strong> None are defined in the policy yet. Where a threshold appears, as on dial A, it's marked as a placeholder.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Option F -->
+  <section class="option" aria-labelledby="f-title">
+    <div class="option-head"><span class="chip">Option F</span><h2 id="f-title">Executive brief</h2></div>
+    <p class="option-sub">A one-screen summary: a headline sentence, four key numbers and the three cases to act on first, ranked by value.
+      <strong>Copy summary</strong> puts it on the clipboard as plain text for email or Slack.</p>
+    <div class="brief-date" id="f-date"></div>
+    <p class="brief-headline" id="f-headline"></p>
+    <div class="kpis" id="f-kpis"></div>
+    <div class="act">
+      <h3>Act on these first</h3>
+      <div id="f-act"></div>
+    </div>
+    <div class="brief-actions">
+      <button class="btn" id="f-copy">Copy summary</button>
+      <span class="copied" id="f-copied" aria-live="polite"></span>
+    </div>
+    <div class="notes">
+      <div><h3>Works well for</h3><ul><li>A leader who has 30 seconds</li><li>Ready to paste into a daily email or a status slide</li></ul></div>
+      <div><h3>Watch out for</h3><ul><li>Mostly text and numbers, so less visual; pair it with G or H</li><li>The headline wording needs agreeing so it reads the same every day</li></ul></div>
+    </div>
+  </section>
+
+  <!-- Option G -->
+  <section class="option" aria-labelledby="g-title">
+    <div class="option-head"><span class="chip">Option G</span><h2 id="g-title">Where the money is, and who holds it</h2></div>
+    <p class="option-sub">Invoice value grouped by who holds the next step. Only <strong>Waiting on the bank</strong> is highlighted,
+      because it's the one a leader can fix. The other groups are context.</p>
+    <div class="money" id="g-money"></div>
+    <p class="m-note" id="g-note"></p>
+    <div class="notes">
+      <div><h3>Works well for</h3><ul><li>Turns the queue into exposure (SGD), the language a leader thinks in</li><li>Shows at a glance whether the bank or the business is holding things up</li></ul></div>
+      <div><h3>Watch out for</h3><ul><li>Cases whose invoice couldn't be read have no value yet; they're counted, not hidden</li><li>A real deployment needs currency handling beyond SGD</li></ul></div>
+    </div>
+  </section>
+
+  <!-- Option H -->
+  <section class="option" aria-labelledby="h-title">
+    <div class="option-head"><span class="chip">Option H</span><h2 id="h-title">Controls scorecard: what the agent stopped</h2></div>
+    <p class="option-sub">The trust view. Each dot is a real issue the agent raised on a real case before anything reached financing.
+      A filled dot is resolved; a hollow dot is still open. Hover a dot to see the case.</p>
+    <div class="score-head">
+      <div><div class="hero" id="h-caught">0</div><div class="label">risks caught</div></div>
+      <div><div class="hero" id="h-open">0</div><div class="label">still open</div></div>
+      <div><div class="hero" id="h-leak">0</div><div class="label">cases cleared with an open issue</div></div>
+    </div>
+    <div class="score" id="h-rows"></div>
+    <div class="score-legend"><span><i></i>Resolved</span><span><i class="hollow"></i>Still open</span></div>
+    <div class="notes">
+      <div><h3>Works well for</h3><ul><li>Answers "can I trust it?" with evidence rather than a score</li><li>Strong for a risk committee or a demo audience</li></ul></div>
+      <div><h3>Watch out for</h3><ul><li>Issue categories are grouped by hand here; the app would need to tag issues by category</li><li>Lots of open dots can look alarming, so it needs the context line above</li></ul></div>
+    </div>
+  </section>
+
+  <!-- Option I -->
+  <section class="option" aria-labelledby="i-title">
+    <div class="option-head"><span class="chip">Option I</span><h2 id="i-title">Agent vs people: the business case</h2></div>
+    <p class="option-sub">How the work splits between the agent and people, what the agent costs, and an estimate of reviewer time saved.
+      The time-saved estimate uses two editable assumptions so nobody mistakes it for measured data.</p>
+    <div class="value-grid">
+      <div class="v-card">
+        <h3>Who did the work</h3>
+        <div class="split" id="i-split" role="img" aria-label="Agent actions compared with human decisions"></div>
+        <div class="legend" id="i-legend"></div>
+        <div class="v-stats" id="i-stats"></div>
+      </div>
+      <div class="v-card">
+        <h3>Reviewer time saved <span class="assume-badge">Estimate</span></h3>
+        <div class="assume">
+          <label>Minutes a person needs to check one case by hand <input type="number" id="i-manual" value="20" min="1" max="240"></label>
+          <label>Minutes a reviewer spends on one agent question <input type="number" id="i-decision" value="3" min="0" max="120"></label>
+        </div>
+        <div class="saved" id="i-saved">0 h</div>
+        <div class="hero-sub" style="text-align:left" id="i-saved-sub"></div>
+      </div>
+    </div>
+    <div class="notes">
+      <div><h3>Works well for</h3><ul><li>The "is it worth it?" slide for sponsors and judges</li><li>Cost and effort come from real run data</li></ul></div>
+      <div><h3>Watch out for</h3><ul><li>Time saved is only as good as its assumptions; agree them with operations</li><li>Demo cases finish in minutes because replies were simulated; real cases wait days for the business</li></ul></div>
+    </div>
+  </section>
+
+  <section class="option" aria-labelledby="combo-title">
+    <div class="option-head"><span class="chip">Suggestion</span><h2 id="combo-title">A leader page built from these</h2></div>
+    <p class="option-sub">Rather than choosing one, a "Leader overview" page could combine them from top to bottom:</p>
+    <div class="combo">
+      <div><b>1. Executive brief (F)</b>The headline sentence and four key numbers, readable in five seconds.</div>
+      <div><b>2. Money and controls (G + H)</b>Side by side: where the exposure is and what the agent caught.</div>
+      <div><b>3. Business case (I)</b>Further down, or as a separate tab for sponsors.</div>
+    </div>
+    <p class="option-sub" style="margin-top:16px">Reviewers keep the existing work queue (with A, B or E); leaders get this page instead.</p>
+  </section>
+
+  <footer>Part 2: send feedback using F–I, or the combined suggestion above. Values, costs and issues come from the live demo workspace; only the time-saved assumptions are estimates.</footer>
+
+</div>
+<div class="tooltip" id="tooltip" role="tooltip"></div>
+</div>
+
+<script>
+const STATES = [
+  { key: "needs_decision", label: "Needs a decision", hint: "A reviewer must decide a specific question", icon: "hand" },
+  { key: "working", label: "Agent working", hint: "The agent is inspecting, checking or requesting", icon: "loader" },
+  { key: "waiting_customer", label: "Waiting for the business", hint: "A tracked request is outstanding", icon: "clock" },
+  { key: "paused", label: "Paused", hint: "Automation stopped with work preserved", icon: "pause" },
+  { key: "complete", label: "Complete", hint: "Review summary ready for the financing process", icon: "check" },
+];
+const BY_KEY = Object.fromEntries(STATES.map((s) => [s.key, s]));
+
+// Live snapshot of the local demo workspace, 15 October 2026.
+const SNAPSHOT = [
+  ["CP-2026-0001", "North Quay Supplies Pte Ltd", "NQ-1042", "complete", "Review summary ready for the bank's financing process"],
+  ["CP-2026-0002", "Invoice not yet read", "", "paused", "Paused: the model service is unavailable after 3 attempts"],
+  ["CP-2026-0003", "Alder Trade Supplies Pte Ltd", "AT-2026-1401", "complete", "Review summary ready for the bank's financing process"],
+  ["CP-2026-0004", "Harbour Hygiene Supply Pte Ltd", "HH-2026-3301", "complete", "Review summary ready for the bank's financing process"],
+  ["CP-2026-0005", "Alton Labware Pte Ltd", "AL-2026-5501", "complete", "Review summary ready for the bank's financing process"],
+  ["CP-2026-0006", "Lakeside Maintenance Supply Pte Ltd", "LM-2026-6601", "complete", "Review summary ready for the bank's financing process"],
+  ["CP-2026-0007", "Alder Trade Supplies Pte Ltd", "AT-2026-1001", "complete", "Review summary ready for the bank's financing process"],
+  ["CP-2026-0008", "Alder Trade Supplies Pte Ltd", "AT-2026-1101", "needs_decision", "Review message regarding accounts contact leave"],
+  ["CP-2026-0009", "Alder Trade Supplies Pte Ltd", "AT-2026-1201", "needs_decision", "Review written message containing prompt injection"],
+  ["CP-2026-0010", "Alder Trade Supplies Pte Ltd", "AT-2026-1501", "needs_decision", "Review document appearance"],
+  ["CP-2026-0011", "Alder Trade Supplies Pte Ltd", "AT-2026-0901", "needs_decision", "A replacement changes fields outside the policy"],
+  ["CP-2026-0012", "Jurong Fresh Produce Pte Ltd", "INV-505", "needs_decision", "No reply to request round 1"],
+  ["CP-2026-0013", "Beacon Storage Supplies Pte Ltd", "BS-2026-4401", "waiting_customer", "Waiting for the business to reply; reminder scheduled"],
+  ["CP-2026-0014", "Alder Trade Supplies Pte Ltd", "AT-2026-0701", "waiting_customer", "Waiting for the business to reply; reminder scheduled"],
+  ["CP-2026-0015", "Invoice not yet read", "", "waiting_customer", "Waiting for the business to reply; reminder scheduled"],
+  ["CP-2026-0016", "Orchid Bay Garments Pte Ltd", "INV-303", "waiting_customer", "Waiting for the business to reply; reminder scheduled"],
+  ["CP-2026-0017", "Invoice not yet read", "", "paused", "On hold: an overwritten identifier requires issuer verification"],
+  ["CP-2026-0018", "Alder Trade Supplies Pte Ltd", "AT-2026-0801", "paused", "Paused by Alex Chen: credit confirming the receipt basis"],
+  ["CP-2026-0019", "Seabrook Packaging Pte Ltd", "SP-2026-1101", "complete", "Review summary ready for the bank's financing process"],
+  ["CP-2026-0020", "Meridian Office Supply Pte Ltd", "MO-2026-2201", "complete", "Review summary ready for the bank's financing process"],
+].map(([ref, party, inv, status, next]) => ({ ref, party, inv, status, next }));
+
+const NEW_SELLERS = ["Keppel Marine Parts Pte Ltd", "Tanjong Paper Co Pte Ltd", "Bukit Timah Foods Pte Ltd", "Changi Cold Chain Pte Ltd", "Sentosa Print Works Pte Ltd"];
+const NEXT_TEXT = {
+  working: "The agent is reading documents and running checks",
+  waiting_customer: "Waiting for the business to reply; reminder scheduled",
+  needs_decision: "Needs a decision: a written message needs a reviewer",
+  complete: "Review summary ready for the bank's financing process",
+};
+
+let cases = SNAPSHOT.map((c) => ({ ...c }));
+let seq = 21;
+let changedRef = null;
+let previous = null;
+
+const $ = (id) => document.getElementById(id);
+const svgNS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, ns) => {
+  const node = ns ? document.createElementNS(svgNS, tag) : document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  return node;
+};
+const color = (key) => `var(--s-${key})`;
+const counts = () => {
+  const out = Object.fromEntries(STATES.map((s) => [s.key, 0]));
+  for (const c of cases) out[c.status] += 1;
+  return out;
+};
+const pct = (n, d) => (d ? Math.round((n / d) * 100) : 0);
+
+const ICONS = {
+  hand: '<path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
+  loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  pause: '<circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/>',
+  check: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+};
+const icon = (name) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
+
+/* Tooltip: values lead, labels follow; data is inserted with textContent. */
+const tip = $("tooltip");
+function showTip(event, key, value, lines) {
+  tip.replaceChildren();
+  const head = el("div", { class: "tt-value" });
+  const k = el("span", { class: "tt-key" });
+  k.style.background = color(key);
+  head.append(k, document.createTextNode(value));
+  tip.append(head);
+  for (const line of lines) {
+    const row = el("div", { class: "tt-line" });
+    row.textContent = line;
+    tip.append(row);
+  }
+  let x, y;
+  if (event.clientX !== undefined && event.type.startsWith("pointer")) {
+    x = event.clientX; y = event.clientY;
+  } else {
+    const r = event.currentTarget.getBoundingClientRect();
+    x = r.left + r.width / 2; y = r.top;
+  }
+  tip.classList.add("show");
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = `${Math.min(window.innerWidth - w - 8, Math.max(8, x + 14))}px`;
+  tip.style.top = `${Math.max(8, y - h - 12)}px`;
+}
+const hideTip = () => tip.classList.remove("show");
+function hover(node, fn) {
+  node.addEventListener("pointermove", (e) => fn(e));
+  node.addEventListener("focus", (e) => fn(e));
+  node.addEventListener("pointerleave", hideTip);
+  node.addEventListener("blur", hideTip);
+}
+const stateTip = (key) => (e) => {
+  const c = counts(), total = cases.length;
+  showTip(e, key, `${c[key]} cases · ${pct(c[key], total)}%`, [BY_KEY[key].label, BY_KEY[key].hint]);
+};
+
+/* Option A */
+const G = { cx: 150, cy: 160, r: 118 };
+const pt = (f, r = G.r) => {
+  const a = Math.PI * (1 - f);
+  return [G.cx + r * Math.cos(a), G.cy - r * Math.sin(a)];
+};
+const arc = (f0, f1, r = G.r) => {
+  const [x0, y0] = pt(f0, r), [x1, y1] = pt(f1, r);
+  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+};
+function buildGauges() {
+  const gap = 2 / (Math.PI * G.r);
+  const zones = [[0, 1 / 3, "--good"], [1 / 3, 2 / 3, "--warning"], [2 / 3, 1, "--critical"]];
+  for (const [a, b, token] of zones) {
+    $("g1-zones").append(el("path", {
+      d: arc(a + (a ? gap / 2 : 0), b - (b < 1 ? gap / 2 : 0)), fill: "none",
+      stroke: `var(${token})`, "stroke-width": 14,
+    }, true));
+  }
+  for (const f of [0, 0.25, 0.5, 0.75, 1]) {
+    const [x0, y0] = pt(f, G.r - 14), [x1, y1] = pt(f, G.r - 22);
+    $("g1-ticks").append(el("line", { x1: x0, y1: y0, x2: x1, y2: y1, stroke: "var(--baseline)", "stroke-width": 1.5 }, true));
+    // End labels sit under the arc ends so they never touch the horizontal ticks.
+    const [tx, ty] = f % 1 ? pt(f, G.r - 36) : [pt(f)[0], G.cy + 20];
+    const t = el("text", { x: tx, y: ty + 4, "text-anchor": "middle", "font-size": 11, fill: "var(--text-muted)" }, true);
+    t.textContent = `${f * 100}%`;
+    $("g1-ticks").append(t);
+  }
+  $("g2-track").setAttribute("d", arc(0, 1));
+  $("g2-value").setAttribute("d", arc(0, 1));
+}
+function renderGauges(c) {
+  const total = cases.length, open = total - c.complete, person = c.needs_decision + c.paused;
+  const f = open ? person / open : 0;
+  $("g1-needle").style.transform = `rotate(${-90 + 180 * f}deg)`;
+  $("g1-hero").textContent = `${Math.round(f * 100)}%`;
+  $("g1-sub").textContent = `${person} of ${open} open cases need a person (${c.needs_decision} decisions, ${c.paused} paused)`;
+  const done = pct(c.complete, total);
+  $("g2-value").setAttribute("stroke-dasharray", `${total ? (c.complete / total) * 100 : 0} 100`);
+  $("g2-hero").textContent = `${done}%`;
+  $("g2-sub").textContent = `${c.complete} of ${total} cases have a review summary ready`;
+}
+
+/* Option B */
+function buildBar() {
+  for (const s of STATES) {
+    const seg = el("div", { class: "seg", tabindex: "0", "data-key": s.key });
+    seg.style.background = color(s.key);
+    seg.style.color = `var(--on-${s.key})`;
+    const label = el("span", { class: "seg-label" });
+    seg.append(label);
+    hover(seg, stateTip(s.key));
+    $("b-stack").append(seg);
+    const item = el("span", { class: "legend-item", "data-key": s.key });
+    const sw = el("i", { class: "swatch" });
+    sw.style.background = color(s.key);
+    item.append(sw, document.createTextNode(s.label + " "), el("b"));
+    $("b-legend").append(item);
+  }
+}
+function renderBar(c) {
+  const total = cases.length;
+  const visible = STATES.filter((s) => c[s.key] > 0);
+  const width = $("b-stack").clientWidth - 2 * Math.max(0, visible.length - 1);
+  for (const seg of $("b-stack").children) {
+    const key = seg.dataset.key, n = c[key];
+    seg.style.flexGrow = n;
+    seg.classList.toggle("empty", n === 0);
+    seg.classList.toggle("first", visible[0]?.key === key);
+    const label = seg.firstChild;
+    label.textContent = String(n);
+    // Only label inside the segment when the number fits with padding; otherwise legend + tooltip carry it.
+    label.style.opacity = n && (n / total) * width >= 30 ? 1 : 0;
+  }
+  for (const item of $("b-legend").children) item.querySelector("b").textContent = String(c[item.dataset.key]);
+  $("b-open").textContent = total - c.complete;
+  $("b-person").textContent = c.needs_decision + c.paused;
+  $("b-done").textContent = c.complete;
+  $("b-total").textContent = `${total} cases`;
+}
+
+/* Option C */
+function buildDonut() {
+  for (const s of STATES) {
+    const ring = el("circle", {
+      class: "ring", cx: 100, cy: 100, r: 72, fill: "none", stroke: color(s.key),
+      "stroke-width": 22, pathLength: 100, "stroke-dasharray": "0 100", tabindex: "0", "data-key": s.key,
+    }, true);
+    hover(ring, (e) => { highlight(s.key); stateTip(s.key)(e); });
+    ring.addEventListener("pointerleave", () => highlight(null));
+    ring.addEventListener("blur", () => highlight(null));
+    $("c-rings").append(ring);
+    const row = el("div", { class: "donut-row", tabindex: "0", "data-key": s.key });
+    const dot = el("i", { class: "swatch" });
+    dot.style.background = color(s.key);
+    const name = el("span");
+    name.textContent = s.label;
+    const desc = el("span", { class: "desc" });
+    desc.textContent = s.hint;
+    name.append(desc);
+    row.append(dot, name, el("span", { class: "n" }), el("span", { class: "pct" }));
+    for (const ev of ["pointerenter", "focus"]) row.addEventListener(ev, () => highlight(s.key));
+    for (const ev of ["pointerleave", "blur"]) row.addEventListener(ev, () => highlight(null));
+    $("c-legend").append(row);
+  }
+}
+function highlight(key) {
+  for (const ring of $("c-rings").children) ring.classList.toggle("dim", key !== null && ring.dataset.key !== key);
+}
+function renderDonut(c) {
+  const total = cases.length, gap = 0.5;
+  let start = 0;
+  for (const ring of $("c-rings").children) {
+    const n = c[ring.dataset.key], len = total ? (n / total) * 100 : 0;
+    const drawn = n ? Math.max(0, len - gap * 2) : 0;
+    ring.setAttribute("stroke-dasharray", `${drawn} ${100 - drawn}`);
+    ring.setAttribute("stroke-dashoffset", `${-(start + (n ? gap : 0))}`);
+    start += len;
+  }
+  for (const row of $("c-legend").children) {
+    const n = c[row.dataset.key];
+    row.querySelector(".n").textContent = String(n);
+    row.querySelector(".pct").textContent = `${pct(n, total)}%`;
+  }
+  $("c-total").textContent = total;
+  $("c-pct").textContent = `${pct(c.complete, total)}% complete`;
+}
+
+/* Option D */
+const dots = new Map();
+function buildFlow() {
+  for (const s of STATES) {
+    const lane = el("div", { class: "lane", "data-key": s.key });
+    const head = el("div", { class: "lane-head" });
+    const d = el("i", { class: "dot" });
+    d.style.background = color(s.key);
+    const name = el("span");
+    name.textContent = s.label;
+    head.append(d, name, el("span", { class: "n" }));
+    lane.append(head, el("div", { class: "lane-body" }));
+    $("d-lanes").append(lane);
+  }
+  new ResizeObserver(() => layoutFlow(false)).observe($("d-stage"));
+}
+function dotFor(c) {
+  let node = dots.get(c.ref);
+  if (!node) {
+    node = el("button", { class: "case-dot entering", type: "button" });
+    node.setAttribute("aria-label", c.ref);
+    hover(node, (e) => {
+      const cur = cases.find((x) => x.ref === c.ref);
+      showTip(e, cur.status, cur.ref, [`${cur.party}${cur.inv ? " · " + cur.inv : ""}`, BY_KEY[cur.status].label, cur.next]);
+    });
+    $("d-stage").append(node);
+    dots.set(c.ref, node);
+  }
+  return node;
+}
+function layoutFlow(animate = true) {
+  const stage = $("d-stage").getBoundingClientRect();
+  const c = counts();
+  for (const lane of $("d-lanes").children) {
+    const key = lane.dataset.key;
+    lane.querySelector(".n").textContent = c[key];
+    const body = lane.querySelector(".lane-body").getBoundingClientRect();
+    const perRow = Math.max(1, Math.floor((body.width - 12) / 26));
+    const members = cases.filter((x) => x.status === key).sort((a, b) => a.ref.localeCompare(b.ref));
+    const rows = Math.ceil(members.length / perRow);
+    lane.querySelector(".lane-body").style.minHeight = `${Math.max(120, rows * 26 + 16)}px`;
+    members.forEach((m, i) => {
+      const node = dotFor(m);
+      const x = body.left - stage.left + 8 + (i % perRow) * 26;
+      const y = body.top - stage.top + 8 + Math.floor(i / perRow) * 26;
+      if (!animate) node.style.transition = "none";
+      node.style.transform = `translate(${x}px, ${y}px)`;
+      node.style.setProperty("--c", color(key));
+      node.setAttribute("aria-label", `${m.ref}, ${BY_KEY[key].label}`);
+      if (!animate) { node.offsetWidth; node.style.transition = ""; }
+      if (node.classList.contains("entering")) requestAnimationFrame(() => node.classList.remove("entering"));
+      node.classList.toggle("pulse", m.ref === changedRef);
+    });
+  }
+  for (const [ref, node] of dots) if (!cases.some((x) => x.ref === ref)) { node.remove(); dots.delete(ref); }
+}
+
+/* Option E */
+function buildTiles() {
+  for (const s of STATES) {
+    const tile = el("div", { class: "tile", "data-key": s.key, tabindex: "0" });
+    tile.style.setProperty("--c", color(s.key));
+    tile.innerHTML = `<div class="tile-top"><i class="dot" style="background:${color(s.key)}"></i><span></span>${icon(s.icon)}</div>
+      <div class="count">0</div><div class="tile-meter"><i></i></div><div class="share"></div><div class="hint"></div>`;
+    tile.querySelector(".tile-top span").textContent = s.label;
+    tile.querySelector(".hint").textContent = s.hint;
+    hover(tile, stateTip(s.key));
+    $("e-tiles").append(tile);
+  }
+}
+function tween(node, to) {
+  const from = Number(node.textContent) || 0;
+  if (from === to || matchMedia("(prefers-reduced-motion: reduce)").matches) { node.textContent = to; return; }
+  const t0 = performance.now();
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / 450);
+    node.textContent = Math.round(from + (to - from) * k);
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function renderTiles(c) {
+  const total = cases.length;
+  for (const tile of $("e-tiles").children) {
+    const key = tile.dataset.key, n = c[key];
+    const count = tile.querySelector(".count");
+    tween(count, n);
+    count.classList.toggle("zero", n === 0);
+    tile.querySelector(".tile-meter i").style.width = `${total ? (n / total) * 100 : 0}%`;
+    tile.querySelector(".share").textContent = `${pct(n, total)}% of ${total} cases`;
+    if (key === "working") tile.querySelector(".tile-top svg").classList.toggle("spin", n > 0);
+    if (previous && previous[key] !== n) {
+      tile.classList.add("flash");
+      setTimeout(() => tile.classList.remove("flash"), 1200);
+    }
+  }
+}
+
+/* Table view */
+function renderTable(c) {
+  const total = cases.length;
+  const body = $("t-body");
+  body.replaceChildren();
+  for (const s of STATES) {
+    const tr = el("tr");
+    const state = el("td");
+    const wrap = el("span", { class: "state-cell" });
+    const sw = el("i", { class: "swatch" });
+    sw.style.background = color(s.key);
+    wrap.append(sw, document.createTextNode(s.label));
+    state.append(wrap);
+    const hint = el("td"); hint.textContent = s.hint;
+    const n = el("td", { class: "num" }); n.textContent = c[s.key];
+    const share = el("td", { class: "num" }); share.textContent = `${pct(c[s.key], total)}%`;
+    tr.append(state, hint, n, share);
+    body.append(tr);
+  }
+  const list = $("t-cases");
+  list.replaceChildren();
+  for (const x of cases) {
+    const tr = el("tr");
+    for (const v of [x.ref, x.party, x.inv || "—", BY_KEY[x.status].label, x.next]) {
+      const td = el("td"); td.textContent = v; tr.append(td);
+    }
+    list.append(tr);
+  }
+}
+
+function render() {
+  const c = counts();
+  renderGauges(c);
+  renderBar(c);
+  renderDonut(c);
+  layoutFlow(true);
+  renderTiles(c);
+  renderTable(c);
+  previous = c;
+}
+
+/* Simulation: plausible moves between states, weighted so the agent's work drains. */
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+function simulate() {
+  const of = (key) => cases.filter((x) => x.status === key);
+  const events = [];
+  if (of("working").length) {
+    events.push([5, () => {
+      const c = pick(of("working"));
+      const to = pick(["waiting_customer", "complete", "complete", "needs_decision"]);
+      const what = { waiting_customer: "agent requested missing evidence", complete: "agent completed the review", needs_decision: "agent raised a question for a reviewer" }[to];
+      return [c, to, what];
+    }]);
+  }
+  if (of("waiting_customer").length) events.push([2, () => [pick(of("waiting_customer")), "working", "business sent new evidence"]]);
+  if (of("needs_decision").length) events.push([2, () => [pick(of("needs_decision")), "working", "reviewer made a decision"]]);
+  if (of("paused").length) events.push([1, () => [pick(of("paused")), "working", "supervisor resumed automation"]]);
+  if (cases.length < 32 || !events.length) {
+    events.push([of("working").length ? 1 : 2, () => {
+      const ref = `CP-2026-${String(seq++).padStart(4, "0")}`;
+      const c = { ref, party: pick(NEW_SELLERS), inv: `INV-${7000 + seq}`, status: "working", next: NEXT_TEXT.working };
+      cases.push(c);
+      return [c, "working", "new case submitted"];
+    }]);
+  }
+  const totalWeight = events.reduce((s, [w]) => s + w, 0);
+  let r = Math.random() * totalWeight;
+  const [, fn] = events.find(([w]) => (r -= w) < 0) ?? events[0];
+  const [c, to, what] = fn();
+  const from = c.status;
+  c.status = to;
+  c.next = NEXT_TEXT[to] ?? c.next;
+  changedRef = c.ref;
+  const msg = $("event");
+  msg.replaceChildren();
+  const strong = el("strong");
+  strong.textContent = c.ref;
+  msg.append(strong, document.createTextNode(` · ${what}` + (from === to ? "" : ` (${BY_KEY[from].label} → ${BY_KEY[to].label})`)));
+  render();
+}
+
+let timer = null;
+$("step").addEventListener("click", simulate);
+$("auto").addEventListener("click", (e) => {
+  const on = !timer;
+  e.currentTarget.setAttribute("aria-pressed", String(on));
+  e.currentTarget.textContent = on ? "Stop auto-play" : "Auto-play";
+  if (on) { simulate(); timer = setInterval(simulate, 2200); } else { clearInterval(timer); timer = null; }
+});
+$("reset").addEventListener("click", () => {
+  cases = SNAPSHOT.map((c) => ({ ...c }));
+  seq = 21;
+  changedRef = null;
+  $("event").textContent = "Showing the live snapshot.";
+  render();
+});
+$("theme").addEventListener("click", () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  $("theme").textContent = dark ? "Dark mode" : "Light mode";
+});
+if (matchMedia("(prefers-color-scheme: dark)").matches) $("theme").textContent = "Light mode";
+window.addEventListener("resize", () => renderBar(counts()));
+
+buildGauges();
+buildBar();
+buildDonut();
+buildFlow();
+buildTiles();
+render();
+</script>
+<script>
+/* Part 2: leader views (F–I). Reuses the helpers and data above and wraps render() without changing it. */
+const ISSUE_TYPES = [
+  { key: "tamper", label: "Signs of tampering", hint: "Edited identifiers, or a form unlike the supplier's reference" },
+  { key: "inject", label: "Instructions aimed at the agent", hint: "Text trying to steer the review (prompt injection)" },
+  { key: "amount", label: "Amount errors", hint: "Totals that don't add up, or corrections that change the sale" },
+  { key: "delivery", label: "Delivery not proven", hint: "Missing, copied, running-total or withdrawn receipts" },
+  { key: "message", label: "Disputes and messages", hint: "Buyer disputes and vendor messages a person must read" },
+  { key: "document", label: "Unsupported documents", hint: "Invoices the policy can't check, such as tax lines" },
+  { key: "service", label: "Service interruptions", hint: "Model outages handled with no work lost (not a risk)" },
+];
+
+// Per-case figures from the live demo workspace: invoice value (SGD), Gemini cost (USD), agent tool actions,
+// human decisions already made, minutes to complete, and the issues the agent raised [type, resolved, what happened].
+const META_SNAPSHOT = {
+  "CP-2026-0001": { total: 2500, cost: 0.0132, tools: 2, made: 0, mins: 0.3, issues: [] },
+  "CP-2026-0002": { total: null, cost: 0, tools: 0, made: 0, mins: null, issues: [["service", false, "Model outage after 3 attempts; nothing was lost"]] },
+  "CP-2026-0003": { total: 2500, cost: 0.0213, tools: 2, made: 0, mins: 0.4, issues: [] },
+  "CP-2026-0004": { total: 2550, cost: 0.0271, tools: 6, made: 0, mins: 0.6, issues: [["delivery", true, "Partial delivery; agent requested the balance and it arrived"]] },
+  "CP-2026-0005": { total: 4500, cost: 0.0453, tools: 10, made: 1, mins: 2.7, issues: [["message", true, "Buyer disputed 20 crates; corrected receipts obtained"]] },
+  "CP-2026-0006": { total: 2150, cost: 0.0243, tools: 7, made: 1, mins: 1.9, issues: [["delivery", true, "Seller's dispatch note offered as proof of receipt; excluded"]] },
+  "CP-2026-0007": { total: 2500, cost: 0.0197, tools: 4, made: 1, mins: 0.6, issues: [["message", true, "Vendor explanation recorded; checks unchanged"]] },
+  "CP-2026-0008": { total: 2500, cost: 0.0173, tools: 3, made: 0, mins: null, issues: [["message", false, "Vendor note about an accounts contact on leave"]] },
+  "CP-2026-0009": { total: 2500, cost: 0.0131, tools: 2, made: 0, mins: null, issues: [["inject", false, "Message tells the agent to skip its checks"]] },
+  "CP-2026-0010": { total: 2500, cost: 0.0136, tools: 2, made: 0, mins: null, issues: [["tamper", false, "Invoice form differs from the supplier's reference"]] },
+  "CP-2026-0011": { total: 2600, cost: 0.0187, tools: 5, made: 0, mins: null, issues: [["amount", false, "Correction changes the quantity, outside policy"]] },
+  "CP-2026-0012": { total: 7680, cost: 0.0076, tools: 4, made: 0, mins: null, issues: [["delivery", false, "Receipt still missing after the reminder and deadline"]] },
+  "CP-2026-0013": { total: 2400, cost: 0.013, tools: 4, made: 0, mins: null, issues: [["delivery", false, "Copied receipt counted once; balance still unproven"]] },
+  "CP-2026-0014": { total: 2600, cost: 0.0133, tools: 3, made: 0, mins: null, issues: [["amount", false, "Invoice total is wrong"], ["delivery", false, "40 of 100 units have no receipt"]] },
+  "CP-2026-0015": { total: null, cost: 0.0113, tools: 3, made: 0, mins: null, issues: [["document", false, "Invoice has a tax line the policy can't check"]] },
+  "CP-2026-0016": { total: 6000, cost: 0.0122, tools: 5, made: 0, mins: null, issues: [["delivery", false, "Receipt withdrawn after the review completed"]] },
+  "CP-2026-0017": { total: null, cost: 0.0282, tools: 2, made: 1, mins: null, issues: [["tamper", false, "Invoice number covered and overwritten"]] },
+  "CP-2026-0018": { total: 2500, cost: 0.0183, tools: 4, made: 1, mins: null, issues: [["delivery", false, "Running-total receipt would double count"]] },
+  "CP-2026-0019": { total: 2220, cost: 0.011, tools: 2, made: 0, mins: 0.3, issues: [] },
+  "CP-2026-0020": { total: 2600, cost: 0.0233, tools: 6, made: 0, mins: 1.3, issues: [["amount", true, "Invoice total was wrong; corrected invoice accepted"]] },
+};
+const OWNERS = [
+  { key: "bank", label: "Waiting on the bank", hint: "Needs a decision or paused", states: ["needs_decision", "paused"] },
+  { key: "business", label: "Waiting on the business", hint: "A request is outstanding", states: ["waiting_customer"] },
+  { key: "agent", label: "With the agent", hint: "Being read and checked now", states: ["working"] },
+  { key: "cleared", label: "Cleared for financing", hint: "Review summary ready", states: ["complete"] },
+];
+
+const cloneMeta = () => JSON.parse(JSON.stringify(META_SNAPSHOT));
+let meta = cloneMeta();
+let lastCases = cases;
+let lastStatus = new Map(SNAPSHOT.map((c) => [c.ref, c.status]));
+const sgd = (n) => `SGD ${Math.round(n).toLocaleString("en-SG")}`;
+const usd = (n, d = 3) => `US$${n.toFixed(d)}`;
+const median = (xs) => {
+  if (!xs.length) return null;
+  const s = [...xs].sort((a, b) => a - b), m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+};
+const resolveAll = (m) => m.issues.forEach((i) => (i[1] = true));
+
+// Keep leader figures in step with simulated moves, so F–I react like the rest of the page.
+function syncMeta() {
+  if (cases !== lastCases) {
+    meta = cloneMeta();
+    lastCases = cases;
+    lastStatus = new Map(SNAPSHOT.map((c) => [c.ref, c.status]));
+    return;
+  }
+  for (const c of cases) {
+    if (!meta[c.ref]) {
+      meta[c.ref] = { total: 1800 + Math.round(Math.random() * 620) * 10, cost: 0.006, tools: 2, made: 0, mins: null, issues: [], born: Date.now() };
+    }
+    const m = meta[c.ref], from = lastStatus.get(c.ref), to = c.status;
+    if (from === to) continue;
+    if ((from === "needs_decision" || from === "paused") && to === "working") { m.made += 1; resolveAll(m); }
+    if (from === "waiting_customer" && to === "working") m.tools += 1;
+    if (to === "complete") {
+      m.mins = Math.round((0.4 + Math.random() * 2.2) * 10) / 10;
+      m.cost += 0.01; m.tools += 3; resolveAll(m);
+    }
+    if (to === "waiting_customer") {
+      m.cost += 0.006; m.tools += 2;
+      if (!m.issues.some((i) => !i[1])) m.issues.push(["delivery", false, "Receipts don't yet cover the invoiced quantity"]);
+    }
+    if (to === "needs_decision") {
+      m.cost += 0.006; m.tools += 2;
+      if (!m.issues.some((i) => !i[1])) m.issues.push(["message", false, "A written message needs a reviewer"]);
+    }
+  }
+  lastStatus = new Map(cases.map((c) => [c.ref, c.status]));
+}
+
+const ownerOf = (status) => OWNERS.find((o) => o.states.includes(status)).key;
+function groups() {
+  const out = Object.fromEntries(OWNERS.map((o) => [o.key, { n: 0, value: 0, unknown: 0, cases: [] }]));
+  for (const c of cases) {
+    const g = out[ownerOf(c.status)], m = meta[c.ref];
+    g.n += 1; g.cases.push(c);
+    if (m.total == null) g.unknown += 1; else g.value += m.total;
+  }
+  return out;
+}
+
+/* F: executive brief */
+function briefText(g) {
+  const bank = g.bank.cases.filter((c) => meta[c.ref].total != null).sort((a, b) => meta[b.ref].total - meta[a.ref].total);
+  const top = bank[0];
+  return {
+    lead: `${sgd(g.cleared.value)} cleared for financing across ${g.cleared.n} cases.`,
+    rest: ` ${sgd(g.bank.value)} is waiting on the bank across ${g.bank.n} cases` +
+      (top ? `; the largest is ${top.ref} (${sgd(meta[top.ref].total)}).` : "."),
+  };
+}
+function kpis(g) {
+  const done = cases.filter((c) => c.status === "complete");
+  const handsFree = done.filter((c) => meta[c.ref].made === 0).length;
+  const cost = cases.reduce((s, c) => s + meta[c.ref].cost, 0);
+  const mins = median(done.map((c) => meta[c.ref].mins).filter((x) => x != null));
+  return [
+    { label: "Cleared for financing", value: sgd(g.cleared.value), sub: `${g.cleared.n} cases with a review summary` },
+    { label: "Waiting on the bank", value: sgd(g.bank.value), sub: `${g.bank.n} cases` + (g.bank.unknown ? ` · ${g.bank.unknown} not yet valued` : "") },
+    { label: "Completed with no person involved", value: `${pct(handsFree, done.length)}%`, sub: `${handsFree} of ${done.length} completed cases` },
+    { label: "Agent cost per case", value: usd(cases.length ? cost / cases.length : 0), sub: `${usd(cost, 2)} total · median ${mins == null ? "–" : mins.toFixed(1)} min to complete` },
+  ];
+}
+function renderBrief() {
+  const g = groups();
+  $("f-date").textContent = "Thursday 15 October 2026 · Straits Commercial Bank — Trade Operations";
+  const t = briefText(g);
+  const head = $("f-headline");
+  head.replaceChildren();
+  const em = el("em");
+  em.textContent = t.lead;
+  head.append(em, document.createTextNode(t.rest));
+  const box = $("f-kpis");
+  box.replaceChildren();
+  for (const k of kpis(g)) {
+    const tile = el("div", { class: "kpi" });
+    for (const [cls, text] of [["k-label", k.label], ["k-value", k.value], ["k-sub", k.sub]]) {
+      const d = el("div", { class: cls }); d.textContent = text; tile.append(d);
+    }
+    box.append(tile);
+  }
+  const ranked = [...g.bank.cases].sort((a, b) => (meta[b.ref].total ?? -1) - (meta[a.ref].total ?? -1)).slice(0, 3);
+  const list = $("f-act");
+  list.replaceChildren();
+  if (!ranked.length) {
+    const p = el("p", { class: "muted" }); p.textContent = "Nothing is waiting on the bank."; list.append(p);
+  }
+  ranked.forEach((c, i) => {
+    const row = el("div", { class: "act-row" });
+    const rank = el("span", { class: "rank" }); rank.textContent = i + 1;
+    const ref = el("div");
+    const r = el("div", { class: "ref" }); r.textContent = c.ref;
+    const tag = el("span", { class: "tag" });
+    const dot = el("i", { class: "dot" }); dot.style.background = color(c.status);
+    tag.append(dot, document.createTextNode(BY_KEY[c.status].label));
+    ref.append(r, tag);
+    const why = el("div", { class: "why" });
+    const b = el("b"); b.textContent = c.party;
+    why.append(b, document.createTextNode(c.next));
+    const val = el("div", { class: "val" });
+    val.textContent = meta[c.ref].total == null ? "Not yet valued" : sgd(meta[c.ref].total);
+    row.append(rank, ref, why, val);
+    list.append(row);
+  });
+}
+$("f-copy").addEventListener("click", async () => {
+  const g = groups(), t = briefText(g);
+  const lines = [t.lead + t.rest, "", ...kpis(g).map((k) => `• ${k.label}: ${k.value} (${k.sub})`)];
+  const text = lines.join("\n");
+  try { await navigator.clipboard.writeText(text); $("f-copied").textContent = "Summary copied."; }
+  catch {
+    const area = el("textarea"); area.value = text; document.body.append(area); area.select();
+    document.execCommand("copy"); area.remove(); $("f-copied").textContent = "Summary copied.";
+  }
+  setTimeout(() => ($("f-copied").textContent = ""), 2500);
+});
+
+/* G: money by owner — emphasis on the bank, the rest as grey context */
+function buildMoney() {
+  for (const o of OWNERS) {
+    const row = el("div", { class: "money-row", tabindex: "0", "data-key": o.key });
+    const label = el("div", { class: "m-label" });
+    label.append(document.createTextNode(o.label), el("span"));
+    const track = el("div", { class: "m-track" });
+    const bar = el("div", { class: "m-bar" });
+    bar.style.setProperty("--c", o.key === "bank" ? "var(--s-bank)" : "var(--s-other)");
+    track.append(bar, el("span", { class: "m-val" }));
+    row.append(label, track);
+    hover(row, (e) => {
+      const g = groups()[o.key];
+      const refs = g.cases.map((c) => c.ref.replace("CP-2026-", "#")).join(", ") || "No cases";
+      showTip(e, o.key === "bank" ? "bank" : "other", `${sgd(g.value)} · ${g.n} cases`, [o.label, refs]);
+    });
+    $("g-money").append(row);
+  }
+}
+function renderMoney() {
+  const g = groups();
+  const max = Math.max(1, ...OWNERS.map((o) => g[o.key].value));
+  for (const row of $("g-money").children) {
+    const k = row.dataset.key, d = g[k];
+    row.querySelector(".m-label span").textContent = `${d.n} cases · ${OWNERS.find((o) => o.key === k).hint}`;
+    row.querySelector(".m-bar").style.width = `${(d.value / max) * 78}%`;
+    row.querySelector(".m-val").textContent = sgd(d.value) + (d.unknown ? ` + ${d.unknown} not yet valued` : "");
+  }
+  const unknown = OWNERS.reduce((s, o) => s + g[o.key].unknown, 0);
+  $("g-note").textContent = unknown
+    ? `${unknown} cases have no value yet because their invoice couldn't be read (an unsupported tax line, an edited number, or a model outage). They're counted in each group but have no bar length.`
+    : "Every case has a value.";
+}
+
+/* H: controls scorecard — one dot per real issue, filled when resolved */
+function buildScore() {
+  for (const t of ISSUE_TYPES) {
+    const row = el("div", { class: "score-row", "data-key": t.key });
+    const name = el("div", { class: "s-name" });
+    const hint = el("span"); hint.textContent = t.hint;
+    name.append(document.createTextNode(t.label), hint);
+    row.append(name, el("div", { class: "issue-dots" }), el("div", { class: "s-count" }));
+    $("h-rows").append(row);
+  }
+}
+function renderScore() {
+  const all = cases.flatMap((c) => meta[c.ref].issues.map(([type, resolved, what]) => ({ ref: c.ref, status: c.status, type, resolved, what })));
+  const risks = all.filter((i) => i.type !== "service");
+  $("h-caught").textContent = risks.length;
+  $("h-open").textContent = risks.filter((i) => !i.resolved).length;
+  $("h-leak").textContent = cases.filter((c) => c.status === "complete" && meta[c.ref].issues.some((i) => !i[1])).length;
+  for (const row of $("h-rows").children) {
+    const items = all.filter((i) => i.type === row.dataset.key);
+    const dots = row.querySelector(".issue-dots");
+    dots.replaceChildren();
+    for (const it of items) {
+      const d = el("button", { class: `issue-dot${it.resolved ? "" : " open"}`, type: "button" });
+      d.setAttribute("aria-label", `${it.ref}: ${it.what} (${it.resolved ? "resolved" : "still open"})`);
+      hover(d, (e) => showTip(e, "issue", it.ref, [it.what, it.resolved ? "Resolved" : `Still open · ${BY_KEY[it.status].label}`]));
+      dots.append(d);
+    }
+    const open = items.filter((i) => !i.resolved).length;
+    const count = row.querySelector(".s-count");
+    count.replaceChildren();
+    const b = el("b"); b.textContent = items.length;
+    count.append(b, document.createTextNode(items.length ? ` caught · ${open} open` : " caught"));
+  }
+}
+
+/* I: agent vs people, plus the labelled time-saved estimate */
+function buildValue() {
+  for (const key of ["agent", "people"]) {
+    const seg = el("div", { tabindex: "0", "data-key": key });
+    seg.style.background = `var(--s-${key})`;
+    hover(seg, (e) => {
+      const v = valueFigures();
+      showTip(e, key, key === "agent" ? `${v.actions} agent actions` : `${v.decisions} human decisions`,
+        [key === "agent" ? "Reading documents, running checks, sending requests and reminders" : "Decisions made by reviewers and supervisors"]);
+    });
+    $("i-split").append(seg);
+    const item = el("span", { class: "legend-item", "data-key": key });
+    const sw = el("i", { class: "swatch" }); sw.style.background = `var(--s-${key})`;
+    item.append(sw, document.createTextNode(key === "agent" ? "Agent actions " : "Human decisions "), el("b"));
+    $("i-legend").append(item);
+  }
+  for (const id of ["i-manual", "i-decision"]) $(id).addEventListener("input", renderValue);
+}
+function valueFigures() {
+  const actions = cases.reduce((s, c) => s + meta[c.ref].tools, 0);
+  const decisions = cases.reduce((s, c) => s + meta[c.ref].made, 0);
+  const cost = cases.reduce((s, c) => s + meta[c.ref].cost, 0);
+  const done = cases.filter((c) => c.status === "complete");
+  return { actions, decisions, cost, done, doneDecisions: done.reduce((s, c) => s + meta[c.ref].made, 0) };
+}
+function renderValue() {
+  const v = valueFigures();
+  const [agent, people] = $("i-split").children;
+  agent.style.flexGrow = v.actions;
+  people.style.flexGrow = v.decisions;
+  for (const item of $("i-legend").children) item.querySelector("b").textContent = item.dataset.key === "agent" ? v.actions : v.decisions;
+  const stats = $("i-stats");
+  stats.replaceChildren();
+  for (const [value, sub] of [
+    [v.decisions ? `${(v.actions / v.decisions).toFixed(1)}×` : `${v.actions}`, v.decisions ? "agent actions per human decision" : "agent actions, no human decisions yet"],
+    [usd(v.cost, 2), `Gemini cost for ${cases.length} cases`],
+    [usd(v.done.length ? v.done.reduce((s, c) => s + meta[c.ref].cost, 0) / v.done.length : 0), "average cost per completed case"],
+  ]) {
+    const d = el("div");
+    const a = el("div", { class: "k-value" }); a.textContent = value;
+    const b = el("div", { class: "k-sub" }); b.textContent = sub;
+    d.append(a, b);
+    stats.append(d);
+  }
+  const manual = Math.max(0, Number($("i-manual").value) || 0);
+  const perDecision = Math.max(0, Number($("i-decision").value) || 0);
+  const minutes = Math.max(0, v.done.length * manual - v.doneDecisions * perDecision);
+  $("i-saved").textContent = `${(minutes / 60).toFixed(1)} h`;
+  $("i-saved-sub").textContent =
+    `${v.done.length} completed cases × ${manual} min by hand, minus ${v.doneDecisions} reviewer decisions × ${perDecision} min. ` +
+    "Change the assumptions to match your team.";
+}
+
+buildMoney();
+buildScore();
+buildValue();
+const renderOriginal = render;
+render = function () {
+  renderOriginal();
+  syncMeta();
+  renderBrief();
+  renderMoney();
+  renderScore();
+  renderValue();
+};
+render();
+</script>
+</body>
+</html>

@@ -8,6 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 APP_ROOT = Path(__file__).resolve().parents[4]  # .../app
@@ -70,6 +71,7 @@ class Settings(BaseSettings):
     max_wakeups: int = 12
     max_request_rounds: int = 2
     case_budget_usd: Decimal = Decimal("0.50")
+    research_budget_usd: Decimal = Field(default=Decimal("1.00"), ge=Decimal("1.00"))
     daily_budget_usd: Decimal = Decimal("20.00")
     global_concurrency: int = 8
     org_concurrency: int = 2

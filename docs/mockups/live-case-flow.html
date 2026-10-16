@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CaseProof · Live case flow</title>
+<style>
+  /* State colours validated for colour-blind separation: light on #ffffff, dark on #1a1a19. */
+  .viz-root {
+    color-scheme: light;
+    --page: #f4f6f5;
+    --surface: #ffffff;
+    --text-primary: #16323b;
+    --text-secondary: #52626a;
+    --text-muted: #7d8a90;
+    --grid: #e3e8e6;
+    --border: rgba(16, 42, 51, 0.10);
+    --accent: #255f57;
+    --accent-ink: #ffffff;
+    --wash: rgba(16, 42, 51, 0.04);
+    --s-needs_decision: #eda100;
+    --s-working: #2a78d6;
+    --s-waiting_customer: #e87ba4;
+    --s-paused: #6250d6;
+    --s-complete: #1baf7a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --grid: #2c2c2a;
+      --border: rgba(255, 255, 255, 0.10);
+      --accent: #3f8f84;
+      --wash: rgba(255, 255, 255, 0.05);
+      --s-needs_decision: #c98500;
+      --s-working: #3987e5;
+      --s-waiting_customer: #d55181;
+      --s-paused: #9085e9;
+      --s-complete: #199e70;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --border: rgba(255, 255, 255, 0.10);
+    --accent: #3f8f84;
+    --wash: rgba(255, 255, 255, 0.05);
+    --s-needs_decision: #c98500;
+    --s-working: #3987e5;
+    --s-waiting_customer: #d55181;
+    --s-paused: #9085e9;
+    --s-complete: #199e70;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .viz-root {
+    min-height: 100vh; background: var(--page); color: var(--text-primary);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.5;
+  }
+  .topbar {
+    display: flex; align-items: center; gap: 12px; padding: 14px 28px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; }
+  .logo { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 13px; }
+  .live { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+  .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--s-complete); animation: blink 1.6s ease-in-out infinite; }
+  .live.paused i { animation: none; background: var(--text-muted); }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 32px 28px 64px; }
+  h1 { font-size: 34px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02em; }
+  h2 { font-size: 16px; margin: 0 0 10px; }
+  .lede { color: var(--text-secondary); margin: 0 0 22px; max-width: 860px; }
+
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .btn {
+    font: inherit; font-size: 14px; font-weight: 600; border-radius: 10px; padding: 8px 14px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-primary);
+  }
+  .btn:hover { background: var(--wash); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .field { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+  .field select {
+    font: inherit; font-size: 14px; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-primary);
+  }
+  .toolbar .grow { flex: 1; }
+
+  .summary { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; margin-bottom: 14px; }
+  .totals { font-size: 14px; color: var(--text-secondary); }
+  .totals b { color: var(--text-primary); font-size: 16px; }
+  .scale-key {
+    display: inline-flex; align-items: center; gap: 14px; padding: 7px 14px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface); font-size: 13px; color: var(--text-secondary);
+    transition: box-shadow 400ms, border-color 400ms;
+  }
+  .scale-key.flash { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); }
+  .scale-key b { color: var(--text-primary); }
+  .key-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--text-secondary); vertical-align: -2px; margin-right: 6px; }
+  .key-dot.partial { background: conic-gradient(var(--text-secondary) 40%, transparent 0); box-shadow: inset 0 0 0 1.5px var(--text-secondary); }
+
+  .stage { position: relative; }
+  .lanes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 980px) { .lanes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .lanes { grid-template-columns: 1fr; } }
+  .lane { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
+  .lane-head { display: flex; align-items: flex-start; gap: 8px; min-height: 44px; }
+  .lane-head .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; flex: none; }
+  .lane-head .name { font-size: 14px; font-weight: 600; color: var(--text-secondary); line-height: 1.35; }
+  .lane-head .n { margin-left: auto; font-size: 28px; font-weight: 700; line-height: 1; }
+  .lane-hint { font-size: 12.5px; color: var(--text-muted); margin: 2px 0 12px; min-height: 36px; }
+  .lane-body { border-radius: 10px; background: var(--wash); }
+
+  .case-dot {
+    position: absolute; left: 0; top: 0; width: 24px; height: 24px; padding: 0; border: 0; background: transparent;
+    cursor: pointer; border-radius: 50%; z-index: 2;
+    transition: transform 850ms cubic-bezier(.45, 0, .2, 1), opacity 450ms;
+  }
+  .case-dot::before {
+    content: ""; position: absolute; inset: 4px; border-radius: 50%;
+    background: conic-gradient(var(--c) calc(var(--fill, 100) * 1%), transparent 0);
+    box-shadow: 0 0 0 2px var(--surface);
+    transition: inset 150ms;
+  }
+  .case-dot.partial::before { box-shadow: inset 0 0 0 1.5px var(--c), 0 0 0 2px var(--surface); }
+  .case-dot:hover::before, .case-dot:focus-visible::before { inset: 2px; }
+  .case-dot:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 1px; }
+  .case-dot.entering { opacity: 0; }
+  .case-dot.leaving { opacity: 0; pointer-events: none; }
+  .case-dot.pulse::after {
+    content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--c);
+    animation: pulse 1.3s ease-out 2;
+  }
+  @keyframes pulse { from { transform: scale(0.6); opacity: 1; } to { transform: scale(1.7); opacity: 0; } }
+  .particle {
+    position: absolute; left: 0; top: 0; width: 14px; height: 14px; margin: 5px; border-radius: 50%; z-index: 3;
+    background: var(--c); box-shadow: 0 0 0 2px var(--surface), 0 0 14px var(--c); pointer-events: none;
+    transition: transform 850ms cubic-bezier(.45, 0, .2, 1), opacity 300ms 650ms;
+  }
+
+  .bottom { margin-top: 22px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
+  .feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .feed li { display: grid; grid-template-columns: 52px 12px 1fr; gap: 10px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--grid); font-size: 14px; }
+  .feed li:last-child { border-bottom: 0; }
+  .feed .t { color: var(--text-muted); font-variant-numeric: tabular-nums; font-size: 13px; }
+  .feed .d { width: 10px; height: 10px; border-radius: 50%; align-self: center; }
+  .feed .what { color: var(--text-secondary); }
+  .feed .what b { color: var(--text-primary); font-weight: 600; }
+  .feed li.new { animation: slide 450ms ease-out; }
+  @keyframes slide { from { opacity: 0; transform: translateY(-6px); } }
+
+  .tooltip {
+    position: fixed; z-index: 50; pointer-events: none; max-width: 300px;
+    background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); border-radius: 10px;
+    padding: 9px 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14); font-size: 13px; opacity: 0; transition: opacity 120ms;
+  }
+  .tooltip.show { opacity: 1; }
+  .tooltip .tt-value { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .tooltip .tt-key { width: 12px; height: 3px; border-radius: 2px; flex: none; }
+  .tooltip .tt-line { color: var(--text-secondary); margin-top: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .case-dot, .particle { transition: none !important; }
+    .case-dot.pulse::after, .live i, .feed li.new { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <header class="topbar">
+    <div class="brand"><span class="logo">CP</span>CaseProof</div>
+    <span class="live" id="live"><i></i><span id="live-text">Live simulation</span></span>
+  </header>
+
+  <main class="wrap">
+    <h1>Live case flow</h1>
+    <p class="lede">Each dot is a case moving between states; when a lane fills up, one dot stands for 5, 10 or more cases.</p>
+
+    <div class="toolbar" role="toolbar" aria-label="Simulation controls">
+      <button class="btn primary" id="play">Pause</button>
+      <button class="btn" id="step">Step</button>
+      <button class="btn" id="surge">Busy hour: +15 cases</button>
+      <label class="field">Speed
+        <select id="speed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select>
+      </label>
+      <label class="field">Dot scale
+        <select id="scale">
+          <option value="auto">Auto</option>
+          <option value="1">1 dot = 1 case</option>
+          <option value="5">1 dot = 5 cases</option>
+          <option value="10">1 dot = 10 cases</option>
+        </select>
+      </label>
+      <span class="grow"></span>
+      <button class="btn" id="reset">Reset</button>
+      <button class="btn" id="theme">Dark mode</button>
+    </div>
+
+    <div class="summary">
+      <div class="scale-key" id="scale-key" aria-live="polite"></div>
+      <div class="totals" id="totals"></div>
+    </div>
+
+    <div class="stage" id="stage"><div class="lanes" id="lanes"></div></div>
+
+    <div class="bottom">
+      <section class="card" aria-labelledby="feed-title">
+        <h2 id="feed-title">Recent activity</h2>
+        <ol class="feed" id="feed"></ol>
+      </section>
+    </div>
+  </main>
+  <div class="tooltip" id="tooltip" role="tooltip"></div>
+</div>
+
+<script>
+const STATES = [
+  { key: "needs_decision", label: "Needs a decision", hint: "A reviewer must decide a specific question" },
+  { key: "working", label: "Agent working", hint: "The agent is inspecting, checking or requesting" },
+  { key: "waiting_customer", label: "Waiting for the business", hint: "A tracked request is outstanding" },
+  { key: "paused", label: "Paused", hint: "Automation stopped with work preserved" },
+  { key: "complete", label: "Complete", hint: "Review summary ready for the financing process" },
+];
+const BY_KEY = Object.fromEntries(STATES.map((s) => [s.key, s]));
+
+// Live snapshot of the local demo workspace, 15 October 2026.
+const SNAPSHOT = [
+  ["CP-2026-0001", "North Quay Supplies Pte Ltd", "NQ-1042", "complete"],
+  ["CP-2026-0002", "Invoice not yet read", "", "paused"],
+  ["CP-2026-0003", "Alder Trade Supplies Pte Ltd", "AT-2026-1401", "complete"],
+  ["CP-2026-0004", "Harbour Hygiene Supply Pte Ltd", "HH-2026-3301", "complete"],
+  ["CP-2026-0005", "Alton Labware Pte Ltd", "AL-2026-5501", "complete"],
+  ["CP-2026-0006", "Lakeside Maintenance Supply Pte Ltd", "LM-2026-6601", "complete"],
+  ["CP-2026-0007", "Alder Trade Supplies Pte Ltd", "AT-2026-1001", "complete"],
+  ["CP-2026-0008", "Alder Trade Supplies Pte Ltd", "AT-2026-1101", "needs_decision"],
+  ["CP-2026-0009", "Alder Trade Supplies Pte Ltd", "AT-2026-1201", "needs_decision"],
+  ["CP-2026-0010", "Alder Trade Supplies Pte Ltd", "AT-2026-1501", "needs_decision"],
+  ["CP-2026-0011", "Alder Trade Supplies Pte Ltd", "AT-2026-0901", "needs_decision"],
+  ["CP-2026-0012", "Jurong Fresh Produce Pte Ltd", "INV-505", "needs_decision"],
+  ["CP-2026-0013", "Beacon Storage Supplies Pte Ltd", "BS-2026-4401", "waiting_customer"],
+  ["CP-2026-0014", "Alder Trade Supplies Pte Ltd", "AT-2026-0701", "waiting_customer"],
+  ["CP-2026-0015", "Invoice not yet read", "", "waiting_customer"],
+  ["CP-2026-0016", "Orchid Bay Garments Pte Ltd", "INV-303", "waiting_customer"],
+  ["CP-2026-0017", "Invoice not yet read", "", "paused"],
+  ["CP-2026-0018", "Alder Trade Supplies Pte Ltd", "AT-2026-0801", "paused"],
+  ["CP-2026-0019", "Seabrook Packaging Pte Ltd", "SP-2026-1101", "complete"],
+  ["CP-2026-0020", "Meridian Office Supply Pte Ltd", "MO-2026-2201", "complete"],
+].map(([ref, party, inv, status]) => ({ ref, party, inv, status }));
+
+const SELLERS = [
+  "Keppel Marine Parts Pte Ltd", "Tanjong Paper Co Pte Ltd", "Bukit Timah Foods Pte Ltd", "Changi Cold Chain Pte Ltd",
+  "Sentosa Print Works Pte Ltd", "Pasir Panjang Logistics Pte Ltd", "Raffles Office Supply Pte Ltd", "Tampines Textiles Pte Ltd",
+];
+const STEPS = [1, 5, 10, 25, 50, 100, 250, 500, 1000];
+const ROWS = 5, CELL = 26, PAD = 6;
+const BASE_INTERVAL = 2200;
+
+let cases, seq, minutes, timer = null, playing = false, lastScale = null, prevPos = new Map();
+const dots = new Map();
+const $ = (id) => document.getElementById(id);
+const el = (tag, attrs = {}) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  return n;
+};
+const color = (key) => `var(--s-${key})`;
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const counts = () => {
+  const out = Object.fromEntries(STATES.map((s) => [s.key, 0]));
+  for (const c of cases) out[c.status] += 1;
+  return out;
+};
+
+/* Tooltip: values lead, labels follow; text is inserted with textContent. */
+const tip = $("tooltip");
+function showTip(event, key, value, lines) {
+  tip.replaceChildren();
+  const head = el("div", { class: "tt-value" });
+  const k = el("span", { class: "tt-key" });
+  k.style.background = color(key);
+  head.append(k, document.createTextNode(value));
+  tip.append(head);
+  for (const line of lines) {
+    const row = el("div", { class: "tt-line" });
+    row.textContent = line;
+    tip.append(row);
+  }
+  const r = event.currentTarget.getBoundingClientRect();
+  const x = event.type.startsWith("pointer") ? event.clientX : r.left + r.width / 2;
+  const y = event.type.startsWith("pointer") ? event.clientY : r.top;
+  tip.classList.add("show");
+  tip.style.left = `${Math.min(window.innerWidth - tip.offsetWidth - 8, Math.max(8, x + 14))}px`;
+  tip.style.top = `${Math.max(8, y - tip.offsetHeight - 12)}px`;
+}
+const hideTip = () => tip.classList.remove("show");
+
+/* Lanes */
+function buildLanes() {
+  for (const s of STATES) {
+    const lane = el("div", { class: "lane", "data-key": s.key });
+    const head = el("div", { class: "lane-head" });
+    const d = el("i", { class: "dot" });
+    d.style.background = color(s.key);
+    const name = el("span", { class: "name" });
+    name.textContent = s.label;
+    head.append(d, name, el("span", { class: "n" }));
+    const hint = el("div", { class: "lane-hint" });
+    hint.textContent = s.hint;
+    lane.append(head, hint, el("div", { class: "lane-body" }));
+    $("lanes").append(lane);
+  }
+}
+const perRow = () => {
+  const body = document.querySelector(".lane-body");
+  return Math.max(1, Math.floor((body.clientWidth - PAD * 2 + 2) / CELL));
+};
+// One scale for every lane: the smallest step at which the fullest lane fits in its rows.
+function pickScale(c) {
+  const manual = $("scale").value;
+  if (manual !== "auto") return Number(manual);
+  const capacity = perRow() * ROWS;
+  const fullest = Math.max(...Object.values(c));
+  return STEPS.find((s) => Math.ceil(fullest / s) <= capacity) ?? STEPS[STEPS.length - 1];
+}
+function unitsFor(key, scale) {
+  const members = cases.filter((x) => x.status === key).sort((a, b) => a.ref.localeCompare(b.ref));
+  if (scale === 1) return members.map((m) => ({ id: m.ref, cases: [m], fill: 100 }));
+  const out = [];
+  for (let i = 0; i < members.length; i += scale) {
+    const slice = members.slice(i, i + scale);
+    out.push({ id: `${key}#${i / scale}`, cases: slice, fill: (slice.length / scale) * 100 });
+  }
+  return out;
+}
+
+function dotNode(id) {
+  let node = dots.get(id);
+  if (node) return [node, false];
+  node = el("button", { class: "case-dot", type: "button" });
+  node.addEventListener("pointermove", tipFor);
+  node.addEventListener("focus", tipFor);
+  node.addEventListener("pointerleave", hideTip);
+  node.addEventListener("blur", hideTip);
+  $("stage").append(node);
+  dots.set(id, node);
+  return [node, true];
+}
+function tipFor(e) {
+  const u = e.currentTarget.unit;
+  if (!u) return;
+  if (u.cases.length === 1 && u.scale === 1) {
+    const m = u.cases[0];
+    showTip(e, u.key, m.ref, [`${m.party}${m.inv ? " · " + m.inv : ""}`, BY_KEY[u.key].label]);
+  } else {
+    const refs = u.cases.map((m) => m.ref.replace("CP-2026-", "#"));
+    const list = refs.length > 8 ? `${refs.slice(0, 8).join(", ")} +${refs.length - 8} more` : refs.join(", ");
+    showTip(e, u.key, plural(u.cases.length, "case", "cases"), [BY_KEY[u.key].label, list]);
+  }
+}
+const place = (node, [x, y]) => (node.style.transform = `translate(${x}px, ${y}px)`);
+
+function layout({ changed = null, animate = true } = {}) {
+  const c = counts();
+  const scale = pickScale(c);
+  const columns = perRow();
+  const lanes = [...$("lanes").children];
+  const plan = lanes.map((lane) => ({ lane, key: lane.dataset.key, units: unitsFor(lane.dataset.key, scale) }));
+  for (const p of plan) {
+    const rows = Math.max(ROWS, Math.ceil(p.units.length / columns));
+    p.lane.querySelector(".lane-body").style.height = `${rows * CELL + PAD * 2 - 2}px`;
+    p.lane.querySelector(".n").textContent = c[p.key];
+  }
+  const stage = $("stage").getBoundingClientRect();
+  const newPos = new Map();
+  const seen = new Set();
+  const entering = [];
+  for (const p of plan) {
+    const body = p.lane.querySelector(".lane-body").getBoundingClientRect();
+    p.units.forEach((u, i) => {
+      const target = [body.left - stage.left + PAD + (i % columns) * CELL, body.top - stage.top + PAD + Math.floor(i / columns) * CELL];
+      for (const m of u.cases) newPos.set(m.ref, target);
+      const [node, fresh] = dotNode(u.id);
+      node.unit = { key: p.key, cases: u.cases, scale };
+      node.style.setProperty("--c", color(p.key));
+      node.style.setProperty("--fill", u.fill.toFixed(1));
+      node.classList.toggle("partial", u.fill < 100);
+      node.classList.remove("leaving");
+      node.setAttribute("aria-label", u.cases.length === 1 && scale === 1
+        ? `${u.cases[0].ref}, ${BY_KEY[p.key].label}`
+        : `${plural(u.cases.length, "case", "cases")}, ${BY_KEY[p.key].label}`);
+      node.classList.toggle("pulse", u.cases.some((m) => m.ref === changed));
+      if (fresh) {
+        // A new dot grows out of where its first case was last drawn, so regrouping reads as a merge or split.
+        const from = prevPos.get(u.cases[0]?.ref);
+        node.style.transition = "none";
+        if (from && animate) place(node, from);
+        else { place(node, target); node.classList.add("entering"); }
+        entering.push([node, target]);
+      } else {
+        if (!animate) node.style.transition = "none";
+        place(node, target);
+      }
+      seen.add(u.id);
+    });
+  }
+  for (const [id, node] of dots) {
+    if (seen.has(id)) continue;
+    // Departing dots travel to where their cases now sit, then fade, so nothing simply blinks out.
+    const ref = node.unit?.cases.find((m) => newPos.has(m.ref))?.ref;
+    if (ref && animate) place(node, newPos.get(ref));
+    node.classList.add("leaving");
+    dots.delete(id);
+    setTimeout(() => node.remove(), animate ? 900 : 0);
+  }
+  if (changed && scale > 1 && animate && prevPos.has(changed) && newPos.has(changed)) {
+    const [fx, fy] = prevPos.get(changed), [tx, ty] = newPos.get(changed);
+    if (fx !== tx || fy !== ty) fly(cases.find((m) => m.ref === changed).status, [fx, fy], [tx, ty]);
+  }
+  requestAnimationFrame(() => {
+    for (const node of dots.values()) node.offsetWidth;
+    for (const node of dots.values()) node.style.transition = "";
+    requestAnimationFrame(() => {
+      for (const [node, target] of entering) { place(node, target); node.classList.remove("entering"); }
+    });
+  });
+  prevPos = newPos;
+  renderSummary(c, scale);
+}
+function fly(key, from, to) {
+  const p = el("div", { class: "particle" });
+  p.style.setProperty("--c", color(key));
+  p.style.transition = "none";
+  place(p, from);
+  $("stage").append(p);
+  p.offsetWidth;
+  p.style.transition = "";
+  place(p, to);
+  p.style.opacity = "0";
+  setTimeout(() => p.remove(), 1000);
+}
+
+function renderSummary(c, scale) {
+  const key = $("scale-key");
+  key.replaceChildren();
+  const full = el("span");
+  const d = el("i", { class: "key-dot" });
+  const b = el("b");
+  b.textContent = `1 dot = ${plural(scale, "case", "cases")}`;
+  full.append(d, b);
+  key.append(full);
+  if (scale > 1) {
+    const part = el("span");
+    part.append(el("i", { class: "key-dot partial" }), document.createTextNode(`fewer than ${scale}`));
+    key.append(part);
+  }
+  if (lastScale !== null && scale !== lastScale) {
+    key.classList.add("flash");
+    setTimeout(() => key.classList.remove("flash"), 1600);
+    note("scale", `Dots regrouped: ${scale === 1 ? "one dot per case again" : `one dot now stands for ${scale} cases`}`, true);
+  }
+  lastScale = scale;
+  const total = cases.length;
+  const t = $("totals");
+  t.replaceChildren();
+  const tb = el("b");
+  tb.textContent = total;
+  t.append(tb, document.createTextNode(` cases · ${c.complete} complete (${total ? Math.round((c.complete / total) * 100) : 0}%) · ${total - c.complete} open`));
+}
+
+/* Activity feed */
+const clockText = () => {
+  const h = 9 + Math.floor(minutes / 60), m = minutes % 60;
+  return `${String(h % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+};
+function note(key, text, system = false, ref = "") {
+  const li = el("li", { class: "new" });
+  const t = el("span", { class: "t" });
+  t.textContent = clockText();
+  const d = el("i", { class: "d" });
+  d.style.background = system ? "var(--text-muted)" : color(key);
+  const what = el("span", { class: "what" });
+  if (ref) {
+    const b = el("b");
+    b.textContent = ref;
+    what.append(b, document.createTextNode(` · ${text}`));
+  } else what.textContent = text;
+  li.append(t, d, what);
+  $("feed").prepend(li);
+  while ($("feed").children.length > 8) $("feed").lastChild.remove();
+}
+
+/* Simulation: plausible moves between states, weighted so the agent's work drains. */
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+function newCase() {
+  const ref = `CP-2026-${String(seq++).padStart(4, "0")}`;
+  const c = { ref, party: pick(SELLERS), inv: `INV-${7000 + seq}`, status: "working" };
+  cases.push(c);
+  return c;
+}
+function step() {
+  const of = (key) => cases.filter((x) => x.status === key);
+  const events = [];
+  if (of("working").length) {
+    events.push([6, () => {
+      const c = pick(of("working"));
+      const to = pick(["waiting_customer", "complete", "complete", "complete", "needs_decision"]);
+      const what = { waiting_customer: "agent requested missing evidence", complete: "agent completed the review", needs_decision: "agent raised a question for a reviewer" }[to];
+      return [c, to, what];
+    }]);
+  }
+  if (of("waiting_customer").length) events.push([2, () => [pick(of("waiting_customer")), "working", "business sent new evidence"]]);
+  if (of("needs_decision").length) events.push([2, () => [pick(of("needs_decision")), "working", "reviewer made a decision"]]);
+  if (of("paused").length) events.push([1, () => [pick(of("paused")), "working", "supervisor resumed automation"]]);
+  events.push([of("working").length ? 1.5 : 3, () => [newCase(), "working", "new case submitted"]]);
+  const total = events.reduce((s, [w]) => s + w, 0);
+  let r = Math.random() * total;
+  const [, fn] = events.find(([w]) => (r -= w) < 0) ?? events[events.length - 1];
+  const [c, to, what] = fn();
+  c.status = to;
+  minutes += 2 + Math.floor(Math.random() * 8);
+  note(to, what, false, c.ref);
+  layout({ changed: c.ref });
+}
+function surge() {
+  const speed = Number($("speed").value);
+  note("working", "Busy hour: 15 new cases submitted", true);
+  for (let i = 0; i < 15; i++) {
+    setTimeout(() => {
+      const c = newCase();
+      minutes += 1;
+      layout({ changed: c.ref });
+    }, (i * 160) / speed);
+  }
+}
+
+function setPlaying(on) {
+  playing = on;
+  clearInterval(timer);
+  timer = on ? setInterval(step, BASE_INTERVAL / Number($("speed").value)) : null;
+  $("play").textContent = on ? "Pause" : "Play";
+  $("live").classList.toggle("paused", !on);
+  $("live-text").textContent = on ? "Live simulation" : "Paused";
+}
+function reset() {
+  cases = SNAPSHOT.map((c) => ({ ...c }));
+  seq = 21;
+  minutes = 0;
+  lastScale = null;
+  for (const node of dots.values()) node.remove();
+  dots.clear();
+  prevPos = new Map();
+  $("feed").replaceChildren();
+  note("complete", "Showing the live snapshot of the demo workspace", true);
+  layout({ animate: false });
+}
+
+$("play").addEventListener("click", () => setPlaying(!playing));
+$("step").addEventListener("click", step);
+$("surge").addEventListener("click", surge);
+$("speed").addEventListener("change", () => playing && setPlaying(true));
+$("scale").addEventListener("change", () => layout());
+$("reset").addEventListener("click", reset);
+$("theme").addEventListener("click", () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  $("theme").textContent = dark ? "Dark mode" : "Light mode";
+});
+if (matchMedia("(prefers-color-scheme: dark)").matches) $("theme").textContent = "Light mode";
+// Re-layout only when the width changes; lanes growing taller must not interrupt moving dots.
+let resizeFrame = 0, stageWidth = 0;
+new ResizeObserver(([entry]) => {
+  const width = Math.round(entry.contentRect.width);
+  if (width === stageWidth) return;
+  stageWidth = width;
+  cancelAnimationFrame(resizeFrame);
+  resizeFrame = requestAnimationFrame(() => cases && layout({ animate: false }));
+}).observe($("stage"));
+
+buildLanes();
+reset();
+setPlaying(!reduced());
+</script>
+</body>
+</html>

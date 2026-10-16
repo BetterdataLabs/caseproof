@@ -63,7 +63,9 @@ export function DocumentIntakeForm({
       qc.invalidateQueries({ queryKey: ["case", detail?.case.id] });
       formRef.current?.reset();
       setHasMessage(false);
-      toast.success(initial ? "Case created — reading your PDFs" : "Documents and reply saved");
+      toast.success(
+        initial ? "Case created — reading your documents" : "Documents and reply saved",
+      );
       onComplete(result);
     },
     onError: (error) => {
@@ -85,19 +87,19 @@ export function DocumentIntakeForm({
       files.forEach((f) => body.append(name, f));
     }
     const files = [...body.values()].filter((f): f is File => f instanceof File);
-    if (files.some((f) => !f.name.toLowerCase().endsWith(".pdf") || f.size > maxFileBytes)) {
-      setValidation(`Choose PDF files of at most ${maxFileMiB} MiB each under this policy.`);
+    if (files.some((f) => f.size > maxFileBytes)) {
+      setValidation(`Choose files of at most ${maxFileMiB} MiB each under this policy.`);
       return;
     }
     const evidenceFiles = [...body.getAll("invoice"), ...body.getAll("receipts")];
     if (evidenceFiles.length > 5 || files.reduce((n, f) => n + f.size, 0) > 20 * 1024 * 1024) {
       setValidation(
-        "Choose up to 5 evidence PDFs. All files, including references, must total at most 20 MiB.",
+        "Choose up to 5 evidence documents. All files, including references, must total at most 20 MiB.",
       );
       return;
     }
     if (!files.length && !String(body.get("message") ?? "").trim()) {
-      setValidation("Add a PDF or write a reply.");
+      setValidation("Add a document or write a reply.");
       return;
     }
     if (body.get("replaces") && files.length !== 1) {
@@ -128,7 +130,7 @@ export function DocumentIntakeForm({
         {canRead ? (
           <>
             <Field
-              label={initial ? "Invoice PDF" : "Invoice PDF (optional)"}
+              label={initial ? "Invoice" : "Invoice (optional)"}
               htmlFor="intake-invoice"
               hint={
                 initial
@@ -140,13 +142,13 @@ export function DocumentIntakeForm({
                 id="intake-invoice"
                 name="invoice"
                 type="file"
-                accept=".pdf,application/pdf"
+                accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,.docx,.xlsx,.csv,.txt"
                 required={initial}
                 className={fileStyle}
               />
             </Field>
             <Field
-              label="Delivery receipt PDFs (optional)"
+              label="Delivery and supporting documents (optional)"
               htmlFor="intake-receipts"
               hint={
                 initial
@@ -158,7 +160,7 @@ export function DocumentIntakeForm({
                 id="intake-receipts"
                 name="receipts"
                 type="file"
-                accept=".pdf,application/pdf"
+                accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,.docx,.xlsx,.csv,.txt"
                 multiple
                 className={fileStyle}
               />
@@ -181,20 +183,21 @@ export function DocumentIntakeForm({
             )}
             <details className="text-xs leading-relaxed text-muted">
               <summary className="cursor-pointer font-semibold text-teal-700">
-                Supported PDFs and review limits
+                Document formats and processing limits
               </summary>
               <p className="mt-2">
-                Use PDFs with selectable English text, up to {maxPages} pages / {maxFileMiB} MiB
-                each and 5 files / 20 MiB per upload. Automatic checks cover one goods line in SGD,
-                whole-number quantities, and no tax or extra charges. Scans and other unsupported
-                documents are kept and flagged for review.
+                Upload PDFs, scans, images, Word documents, spreadsheets, CSV or text files. The
+                review supports multiple items, decimal quantities, currencies, taxes and other
+                charges. Each file may contain up to {maxPages} pages or sheets and {maxFileMiB}{" "}
+                MiB; each upload may include 5 documents totaling 20 MiB. Unreadable or incomplete
+                content is identified for review. Appearance checks currently apply to PDFs.
               </p>
             </details>
           </>
         ) : (
           <Callout tone="amber">
-            Turn on autonomous mode in Controls to read uploaded PDFs. You can still add a written
-            reply.
+            Turn on autonomous mode in Controls to read uploaded documents. You can still add a
+            written reply.
           </Callout>
         )}
         {initial && <VendorContactField />}
@@ -217,7 +220,7 @@ export function DocumentIntakeForm({
         <Field
           label={initial ? "Written message (optional)" : "Written reply (optional)"}
           htmlFor="intake-message"
-          hint="Leave blank if you are only uploading documents. Otherwise, paste a message from the seller or buyer. The agent compares it with the PDFs and opens a human review task, even if the message agrees with them."
+          hint="Leave blank if you are only uploading documents. Otherwise, paste a message from the seller or buyer. The agent compares it with the documents and opens a human review task, even if the message agrees with them."
         >
           <Textarea
             id="intake-message"
