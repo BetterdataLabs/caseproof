@@ -42,6 +42,7 @@ export interface VendorDetail {
   bank: string;
   documents: VendorDocument[];
   messages: VendorMessage[];
+  client_export: { available: boolean; export_ref: string } | null;
 }
 
 export const vendorTone = {

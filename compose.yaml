@@ -10,6 +10,7 @@ x-backend: &backend
   environment: &backend-environment
     CASEPROOF_ENVIRONMENT: development
     CASEPROOF_DEV_IDENTITY: "true"
+    CASEPROOF_DEMO_ACCESS_CODE: ${CASEPROOF_DEMO_ACCESS_CODE:-}
     CASEPROOF_STORAGE_BACKEND: local
     CASEPROOF_STORAGE_DIR: /app/.data/objects
     CASEPROOF_QUEUE_BACKEND: local

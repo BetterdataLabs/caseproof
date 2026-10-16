@@ -6,13 +6,36 @@ for these results through `run_checks` and the completion service recomputes the
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any
 
 from .pdfdocs import money_value
 
-CHECKS_VERSION = "checks/1.0"
+CHECKS_VERSION = "checks/1.1"
+DUPLICATE_INVOICE_KEY = "duplicate_invoice"
+DUPLICATE_INVOICE_LABEL = "Invoice is not already on another case in this book"
+DUPLICATE_INVOICE_CRITERIA = (
+    "The same seller, invoice number and stated amount must not already appear on another "
+    "open or completed case in this organisation. A hold here is a book-level control; it is "
+    "not a financing decision and it is not the same as a copied file on one case."
+)
+
+
+def requirement_map(definition: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Policy requirements plus the platform duplicate-invoice hold if an older version omitted it."""
+    requirements = {rule["key"]: rule for rule in definition.get("requirements", [])}
+    requirements.setdefault(
+        DUPLICATE_INVOICE_KEY,
+        {
+            "key": DUPLICATE_INVOICE_KEY,
+            "label": DUPLICATE_INVOICE_LABEL,
+            "description": DUPLICATE_INVOICE_CRITERIA,
+            "depends_on_roles": ["invoice"],
+        },
+    )
+    return requirements
 
 
 @dataclass
@@ -49,6 +72,18 @@ class PartyView:
 
 
 @dataclass
+class PeerInvoice:
+    """Another case in the same organisation that may already carry this seller invoice."""
+
+    reference: str
+    seller: str
+    invoice_number: str
+    total_amount: str
+    lifecycle: str
+    currency: str = ""
+
+
+@dataclass
 class CheckResult:
     key: str
     result: str  # pass | fail | missing | blocked
@@ -75,6 +110,32 @@ def _fmt(amount: Decimal) -> str:
 
 def _qty(text: str) -> Decimal:
     return Decimal(text)
+
+
+def _norm_name(value: str) -> str:
+    return " ".join((value or "").split()).casefold()
+
+
+def _norm_ref(value: str) -> str:
+    return "".join((value or "").split()).casefold()
+
+
+def _norm_amount(value: str) -> str:
+    if not (value or "").strip():
+        return ""
+    try:
+        return str(money_value(value))
+    except ValueError:
+        # Preserve unfamiliar currencies and numeric conventions instead of applying
+        # the legacy SGD parser to documents handled by the flexible review engine.
+        return " ".join(value.split()).casefold()
+
+
+def _invoice_currency(amount: str, currency: str = "") -> str:
+    if currency.strip():
+        return currency.strip().casefold()
+    match = re.search(r"\b[A-Z]{3}\b", amount.upper())
+    return match.group(0).casefold() if match else ""
 
 
 def active_invoice(versions: list[VersionView]) -> VersionView | None:
@@ -348,10 +409,77 @@ def evaluate_delivery(
     return CheckResult(key, "pass", "FULL_RECEIPT", detail, refs, metrics, satisfied)
 
 
+def evaluate_duplicate_invoice(
+    parties: PartyView, versions: list[VersionView], peers: list[PeerInvoice]
+) -> CheckResult:
+    """Hold when the same seller invoice (number and amount) is already on another case."""
+    key = DUPLICATE_INVOICE_KEY
+    invoice = active_invoice(versions)
+    unidentified = not parties.invoice_reference or parties.seller in {"", "Reading invoice…"}
+    if invoice is None or unidentified:
+        return CheckResult(
+            key,
+            "pass",
+            "INVOICE_NOT_IDENTIFIED",
+            "No identified seller invoice to compare across cases yet.",
+        )
+    seller = _norm_name(parties.seller)
+    number = _norm_ref(parties.invoice_reference)
+    amount = _norm_amount(invoice.facts.get("total_amount", ""))
+    currency = _invoice_currency(invoice.facts.get("total_amount", ""), invoice.facts.get("currency", ""))
+    hits = []
+    for peer in peers:
+        if _norm_name(peer.seller) != seller or _norm_ref(peer.invoice_number) != number:
+            continue
+        peer_currency = _invoice_currency(peer.total_amount, peer.currency)
+        if currency and peer_currency and currency != peer_currency:
+            continue
+        peer_amount = _norm_amount(peer.total_amount)
+        if amount and peer_amount and peer_amount != amount:
+            continue
+        hits.append(peer)
+    refs = [invoice.id]
+    if not hits:
+        return CheckResult(
+            key,
+            "pass",
+            "UNIQUE_INVOICE",
+            f"{parties.invoice_reference} from {parties.seller} is not on another case in this book.",
+            refs,
+            {
+                "seller": parties.seller,
+                "invoice_number": parties.invoice_reference,
+                "total_amount": amount,
+                "peer_cases": [],
+            },
+        )
+    labels = ", ".join(f"{peer.reference} ({peer.lifecycle})" for peer in hits)
+    stated_amount = invoice.facts.get("total_amount", "")
+    money = f" for {stated_amount}" if stated_amount else ""
+    return CheckResult(
+        key,
+        "blocked",
+        "DUPLICATE_INVOICE",
+        f"{invoice.label} repeats {parties.seller} invoice {parties.invoice_reference}{money}, "
+        f"already on {labels}. Document review stays on hold. This is not a financing decision.",
+        refs,
+        {
+            "seller": parties.seller,
+            "invoice_number": parties.invoice_reference,
+            "total_amount": amount,
+            "peer_cases": [peer.reference for peer in hits],
+        },
+    )
+
+
 def evaluate(
-    parties: PartyView, versions: list[VersionView], claims: list[ClaimView]
+    parties: PartyView,
+    versions: list[VersionView],
+    claims: list[ClaimView],
+    peers: list[PeerInvoice] | None = None,
 ) -> dict[str, CheckResult]:
     return {
         "invoice_total": evaluate_invoice_total(parties, versions),
         "delivery_receipts": evaluate_delivery(parties, versions, claims),
+        DUPLICATE_INVOICE_KEY: evaluate_duplicate_invoice(parties, versions, peers or []),
     }

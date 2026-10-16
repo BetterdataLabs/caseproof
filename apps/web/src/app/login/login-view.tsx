@@ -1,13 +1,29 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Eye, FileCheck2, FileUp, MessagesSquare, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  FileCheck2,
+  FileUp,
+  MessagesSquare,
+  ShieldCheck,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getJson } from "@/lib/api";
 import type { Persona } from "@/lib/types";
 import { Brand } from "@/components/shell/app-shell";
-import { Avatar, Badge, Button, Callout, ErrorState, Skeleton } from "@/components/ui/primitives";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Callout,
+  ErrorState,
+  Input,
+  Skeleton,
+} from "@/components/ui/primitives";
 
 function accountDescription(person: Persona) {
   if (person.roles.includes("vendor"))
@@ -46,37 +62,92 @@ export function LoginView() {
   const qc = useQueryClient();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [showCode, setShowCode] = useState(false);
+  const opened = useRef(false);
+  const picking = params.get("pick") === "1";
+  const gate = useQuery({
+    queryKey: ["demo-gate"],
+    queryFn: ({ signal }) =>
+      getJson<{ required: boolean; unlocked: boolean }>("/v1/demo/gate", signal),
+  });
+  const showPeople = !!gate.data && (!gate.data.required || (gate.data.unlocked && picking));
   const personas = useQuery({
     queryKey: ["personas"],
     queryFn: ({ signal }) => getJson<{ personas: Persona[] }>("/v1/dev/personas", signal),
+    enabled: showPeople,
   });
 
-  async function signIn(person: Persona) {
+  const signIn = useCallback(
+    async (subject: string, roles: string[] = []) => {
+      if (pending) return;
+      setPending(subject);
+      setError(null);
+      try {
+        const response = await fetch("/api/v1/dev/login", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ subject }),
+          signal: AbortSignal.timeout(20_000),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(body?.error?.message ?? "Sign-in failed. Please try again.");
+        }
+        qc.clear();
+        const described = roles.length
+          ? accountDescription({ roles } as Persona).home
+          : subject === "dev:vendor"
+            ? "/vendor"
+            : "/queue";
+        const home = typeof body.home === "string" ? body.home : described;
+        const next = params.get("next");
+        const generic =
+          !next || next === "/" || next === "/queue" || next === "/vendor" || next === "/login";
+        const safeNext =
+          !generic &&
+          next.startsWith("/") &&
+          !next.startsWith("//") &&
+          !next.includes("\\") &&
+          (home.startsWith("/vendor")
+            ? next === "/vendor" || next.startsWith("/vendor/")
+            : !next.startsWith("/vendor"));
+        router.replace(safeNext ? next : home);
+      } catch (err) {
+        opened.current = false;
+        setError(err instanceof Error ? err.message : "We could not connect. Please try again.");
+        setPending(null);
+      }
+    },
+    [params, pending, qc, router],
+  );
+
+  useEffect(() => {
+    if (!gate.data?.required || !gate.data.unlocked || picking || error) return;
+    if (opened.current) return;
+    opened.current = true;
+    void signIn("dev:alex");
+  }, [gate.data, picking, signIn, error]);
+
+  async function unlock(event: React.FormEvent) {
+    event.preventDefault();
     if (pending) return;
-    setPending(person.subject);
+    setPending("code");
     setError(null);
     try {
-      const response = await fetch("/api/v1/dev/login", {
+      const response = await fetch("/api/v1/demo/unlock", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ subject: person.subject }),
+        body: JSON.stringify({ code }),
         signal: AbortSignal.timeout(20_000),
       });
+      const body = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body?.error?.message ?? "Sign-in failed. Please try again.");
+        throw new Error(body?.error?.message ?? "That access code was not accepted.");
       }
-      qc.clear();
-      const home = accountDescription(person).home;
-      const next = params.get("next");
-      const safeNext =
-        next?.startsWith("/") &&
-        !next.startsWith("//") &&
-        !next.includes("\\") &&
-        (home === "/vendor"
-          ? next === "/vendor" || next.startsWith("/vendor/")
-          : !next.startsWith("/vendor"));
-      router.replace(safeNext ? next! : home);
+      setCode("");
+      setPending(null);
+      await qc.invalidateQueries({ queryKey: ["demo-gate"] });
     } catch (err) {
       setError(err instanceof Error ? err.message : "We could not connect. Please try again.");
       setPending(null);
@@ -86,6 +157,8 @@ export function LoginView() {
   const people = [...(personas.data?.personas ?? [])].sort(
     (a, b) => accountDescription(a).order - accountDescription(b).order,
   );
+  const needsCode = !!gate.data?.required && !gate.data.unlocked;
+  const opening = !!gate.data?.required && gate.data.unlocked && !picking;
 
   return (
     <main className="grid min-h-dvh lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
@@ -148,17 +221,23 @@ export function LoginView() {
           <div className="mb-8 lg:hidden">
             <Brand inverted={false} />
           </div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-700">
-            Choose your workspace
-          </p>
+          {!needsCode && (
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-700">
+              {opening ? "Opening the case" : "Choose your workspace"}
+            </p>
+          )}
           <h2
             id="sign-in-heading"
-            className="mt-2 text-3xl font-semibold tracking-[-0.035em] text-ink"
+            className={`${needsCode ? "" : "mt-2"} text-3xl font-semibold tracking-[-0.035em] text-ink`}
           >
             Welcome to CaseProof
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted">
-            Three personas, one connected review. Choose what you want to do.
+            {needsCode
+              ? "Enter your code. You'll find it on the submission."
+              : opening
+                ? "The quote and checklist are already on the case."
+                : "Three personas, one connected review. Choose what you want to do."}
           </p>
           {params.get("revoked") && (
             <Callout tone="red" className="mt-4" title="Access revoked">
@@ -170,60 +249,119 @@ export function LoginView() {
               <Callout tone="red" className="mt-4" title="Could not sign in">
                 {error}
               </Callout>
+              {gate.data?.unlocked && !picking && (
+                <Button
+                  className="mt-3"
+                  onClick={() => void signIn("dev:alex")}
+                  disabled={!!pending}
+                >
+                  Retry sign-in
+                </Button>
+              )}
             </div>
           )}
-          <div className="mt-7 space-y-3" aria-label="Personas">
-            {personas.isLoading && [1, 2, 3].map((i) => <Skeleton key={i} className="h-40" />)}
-            {personas.error && (
-              <ErrorState error={personas.error} onRetry={() => personas.refetch()} />
-            )}
-            {people.map((person) => {
-              const role = accountDescription(person);
-              const Icon = role.icon;
-              return (
-                <article
-                  key={person.subject}
-                  className="rounded-2xl border border-line bg-paper p-5 shadow-[var(--shadow-card)]"
+          {needsCode && (
+            <form className="mt-7 space-y-4" onSubmit={unlock}>
+              <div className="relative">
+                <Input
+                  id="access-code"
+                  type={showCode ? "text" : "password"}
+                  autoComplete="off"
+                  aria-label="Code"
+                  value={code}
+                  onChange={(event) => setCode(event.target.value)}
+                  className="pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCode((visible) => !visible)}
+                  className="absolute inset-y-0 right-0 grid w-10 place-items-center text-muted hover:text-ink"
+                  aria-label={showCode ? "Hide code" : "Show code"}
+                  aria-pressed={showCode}
                 >
-                  <div className="flex items-center gap-3">
-                    <Avatar
-                      name={person.name}
-                      size={40}
-                      tone={role.order === 0 ? "navy" : "teal"}
-                    />
-                    <div className="flex-1">
-                      <h3 className="text-base font-semibold text-ink">{person.name}</h3>
-                      <p className="mt-0.5 text-xs text-muted">{role.access}</p>
-                    </div>
-                    <Badge
-                      tone={role.order === 0 ? "teal" : "neutral"}
-                      icon={<Icon className="size-3" />}
+                  {showCode ? (
+                    <EyeOff className="size-4" aria-hidden />
+                  ) : (
+                    <Eye className="size-4" aria-hidden />
+                  )}
+                </button>
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                loading={pending === "code"}
+                disabled={!!pending}
+              >
+                Continue
+              </Button>
+            </form>
+          )}
+          {!needsCode && (
+            <div className="mt-7 space-y-3" aria-label="Personas">
+              {(gate.isLoading ||
+                (gate.data?.required && gate.data.unlocked && !picking && !error)) &&
+                [1, 2].map((i) => <Skeleton key={i} className="h-24" />)}
+              {gate.error && <ErrorState error={gate.error} onRetry={() => gate.refetch()} />}
+              {showPeople &&
+                personas.isLoading &&
+                [1, 2, 3].map((i) => <Skeleton key={i} className="h-40" />)}
+              {showPeople && personas.error && (
+                <ErrorState error={personas.error} onRetry={() => personas.refetch()} />
+              )}
+              {showPeople &&
+                people.map((person) => {
+                  const role = accountDescription(person);
+                  const Icon = role.icon;
+                  return (
+                    <article
+                      key={person.subject}
+                      className="rounded-2xl border border-line bg-paper p-5 shadow-[var(--shadow-card)]"
                     >
-                      {role.order === 0 ? "Full access" : role.label}
-                    </Badge>
-                  </div>
-                  <p className="mt-3 text-[13px] leading-relaxed text-muted">
-                    {person.revoked ? "Access to this account has been revoked." : role.description}
-                  </p>
-                  <Button
-                    variant={role.order === 0 ? "primary" : "secondary"}
-                    className="mt-4 w-full"
-                    disabled={!!pending || person.revoked}
-                    loading={pending === person.subject}
-                    onClick={() => signIn(person)}
-                  >
-                    {pending === person.subject
-                      ? "Opening workspace…"
-                      : `Continue as ${person.name}`}
-                    <ArrowRight className="ml-1 size-4" aria-hidden />
-                  </Button>
-                </article>
-              );
-            })}
-          </div>
-          <p className="mt-5 text-center text-xs leading-relaxed text-subtle">
-            Demo sign-in · no password needed. Messages stay inside CaseProof.
-          </p>
+                      <div className="flex items-center gap-3">
+                        <Avatar
+                          name={person.name}
+                          size={40}
+                          tone={role.order === 0 ? "navy" : "teal"}
+                        />
+                        <div className="flex-1">
+                          <h3 className="text-base font-semibold text-ink">{person.name}</h3>
+                          <p className="mt-0.5 text-xs text-muted">{role.access}</p>
+                        </div>
+                        <Badge
+                          tone={role.order === 0 ? "teal" : "neutral"}
+                          icon={<Icon className="size-3" />}
+                        >
+                          {role.order === 0 ? "Full access" : role.label}
+                        </Badge>
+                      </div>
+                      <p className="mt-3 text-[13px] leading-relaxed text-muted">
+                        {person.revoked
+                          ? "Access to this account has been revoked."
+                          : role.description}
+                      </p>
+                      <Button
+                        variant={role.order === 0 ? "primary" : "secondary"}
+                        className="mt-4 w-full"
+                        disabled={!!pending || person.revoked}
+                        loading={pending === person.subject}
+                        onClick={() => signIn(person.subject, person.roles)}
+                      >
+                        {pending === person.subject
+                          ? "Opening workspace…"
+                          : `Continue as ${person.name}`}
+                        <ArrowRight className="ml-1 size-4" aria-hidden />
+                      </Button>
+                    </article>
+                  );
+                })}
+            </div>
+          )}
+          {showPeople && (
+            <p className="mt-5 text-center text-xs leading-relaxed text-subtle">
+              Demo sign-in · no password needed. Messages stay inside CaseProof.
+            </p>
+          )}
         </div>
       </section>
     </main>

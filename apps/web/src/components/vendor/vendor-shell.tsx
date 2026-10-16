@@ -36,7 +36,7 @@ function Workspace({ children }: { children: React.ReactNode }) {
                 variant="ghost"
                 size="sm"
                 icon={<Repeat2 className="size-4" />}
-                onClick={() => router.push("/login")}
+                onClick={() => router.push("/login?pick=1")}
               >
                 Switch persona
               </Button>

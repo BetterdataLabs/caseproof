@@ -1,5 +1,7 @@
 # CaseProof: Winning Proposal Draft (Judge-Ready)
 
+> **Historical proposal draft.** Claims such as a fraud-intelligence layer, dual write-once reports, and reviewer/manager/executive controls do not match the shipped app. Use [ARCHITECTURE.md](../../../../ARCHITECTURE.md), [TESTING.md](../../../../TESTING.md), and [the current judge path](../../../../JUDGE_SCRIPT.md).
+
 Date: 26 September 2026
 Theme: BFSI (Banking, Financial Services, Insurance)
 

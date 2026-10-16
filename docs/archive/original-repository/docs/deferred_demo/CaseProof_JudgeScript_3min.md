@@ -1,5 +1,7 @@
 # CaseProof 3-Minute Judge Script (Proof-First)
 
+> **Historical draft (26 September 2026).** This script describes purchase-order alignment, assistive fraud signals, dual sealed reports, and an executive control tower. Those are **not** in the shipped application. Use [the current judge path](../../../../JUDGE_SCRIPT.md).
+
 Date: 26 September 2026
 Target length: 2m45s to 3m00s
 

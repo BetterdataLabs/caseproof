@@ -10,7 +10,17 @@ from sqlalchemy.orm import Session
 from .actors import ROLE_REVIEWER, ROLE_SUPERVISOR, ROLE_VENDOR, Actor
 from .errors import Conflict, Forbidden, NotFound, Unsupported
 from .history import bump, record
-from .models import Case, Document, DocumentVersion, InfoRequest, Membership, Organisation, Reply, User
+from .models import (
+    Case,
+    Document,
+    DocumentVersion,
+    Export,
+    InfoRequest,
+    Membership,
+    Organisation,
+    Reply,
+    User,
+)
 
 
 def require_access(case: Case, actor: Actor) -> None:
@@ -220,9 +230,16 @@ def detail(session: Session, actor: Actor, case: Case) -> dict:
                 "attachments": [documents[v] for v in reply.version_ids if v in documents],
             }
         )
+    export = session.get(Export, case.current_export_id) if case.current_export_id else None
     return {
         "case": summary(case),
         "bank": bank.short_name,
         "documents": list(documents.values()),
         "messages": sorted(messages, key=lambda item: item["created_at"]),
+        "client_export": {
+            "available": True,
+            "export_ref": export.export_ref,
+        }
+        if export is not None and export.state == "ready" and export.pdf_key
+        else None,
     }

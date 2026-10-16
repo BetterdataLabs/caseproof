@@ -20,7 +20,8 @@ class Settings(BaseSettings):
     )
 
     environment: str = "development"  # development | cloud
-    dev_identity: bool = True  # seeded personas, loopback only; refused when environment=cloud
+    dev_identity: bool = True  # loopback locally; an access code is required for hosted demo personas
+    demo_access_code: str = ""  # same gate in every deployment; never commit a real value
     demo_mode: bool = True  # simulated customer exchange and demo clock
     allow_composed_messages: bool = True  # private evaluation lane: simulation operator may type a message
 
@@ -90,6 +91,6 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
-    if settings.environment == "cloud" and settings.dev_identity:
-        raise RuntimeError("Refusing to start: development identities are enabled in a cloud environment.")
+    if settings.environment == "cloud" and settings.dev_identity and not settings.demo_access_code.strip():
+        raise RuntimeError("Refusing to start: development identities require CASEPROOF_DEMO_ACCESS_CODE.")
     return settings

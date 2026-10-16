@@ -24,6 +24,7 @@
 !/evaluation/results/
 /evaluation/results/*
 !/evaluation/results/latest.json
+!/evaluation/results/MODEL_CARD.md
 
 # Python dependencies and generated files
 .venv/

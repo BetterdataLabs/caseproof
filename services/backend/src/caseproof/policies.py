@@ -11,6 +11,7 @@ from typing import Any
 from sqlalchemy import select
 
 from .catalog import sample_policy
+from .checks import DUPLICATE_INVOICE_KEY, requirement_map
 from .config import get_settings
 from .errors import Conflict, NotFound, Unsupported
 from .history import record, utcnow
@@ -20,7 +21,7 @@ from .review_defaults import current_requirements
 # Metadata is shared with the editor; hard ceilings bound what this implementation supports.
 MAX_RUN_SECONDS = 180
 MAX_REQUIREMENTS = 10
-CORE_KEYS = {"invoice_total", "delivery_receipts"}
+CORE_KEYS = {"invoice_total", "delivery_receipts", DUPLICATE_INVOICE_KEY}
 POLICY_EVIDENCE_TEMPLATE = {
     "label": "Evidence for a policy requirement",
     "text": "Please provide supporting documents or clarification for invoice {invoice_number} to address {policy_title}: {policy_issue}",
@@ -137,6 +138,7 @@ RUNTIME_FIELDS = {
 def definition_for(policy: PolicyVersion) -> dict[str, Any]:
     definition = deepcopy(policy.definition)
     definition["requirements"] = current_requirements(definition)
+    definition["requirements"] = list(requirement_map(definition).values())
     definition["supported_contract"] = (
         "Business documents in supported file formats; interpreted using their stated currencies, units, line items and adjustments."
     )
@@ -217,10 +219,10 @@ def validate_edit(base: dict, proposed: dict) -> dict:
         for key, maximum in (("name", 200), ("notice", 500)):
             expected[key] = _text(proposed[key], key.capitalize(), maximum)
         requirements = proposed["requirements"]
-        if not isinstance(requirements, list) or not 2 <= len(requirements) <= MAX_REQUIREMENTS:
+        if not isinstance(requirements, list) or not len(CORE_KEYS) <= len(requirements) <= MAX_REQUIREMENTS:
             raise Unsupported(
                 "INVALID_CHECKLIST",
-                f"Use the two core checks and up to {MAX_REQUIREMENTS - 2} additional rules.",
+                f"Use the three core checks and up to {MAX_REQUIREMENTS - len(CORE_KEYS)} additional rules.",
             )
         keys = set()
         validated = []
@@ -242,6 +244,8 @@ def validate_edit(base: dict, proposed: dict) -> dict:
                     "INVALID_RULE_SCOPE", "Choose invoice, delivery receipts or both for each rule."
                 )
             core = next((r for r in baseline["requirements"] if r["key"] == key), None)
+            if key == DUPLICATE_INVOICE_KEY and item != core:
+                raise Unsupported("FIXED_DUPLICATE_CHECK", "The duplicate-invoice control cannot be changed.")
             if core and roles != core["depends_on_roles"]:
                 raise Unsupported("FIXED_RULE_SCOPE", "The core checks keep their document scope.")
             validated.append(
@@ -254,7 +258,7 @@ def validate_edit(base: dict, proposed: dict) -> dict:
             )
         if not CORE_KEYS <= keys:
             raise Unsupported(
-                "CORE_CHECK_REQUIRED", "Keep the invoice calculation and delivery coverage checks."
+                "CORE_CHECK_REQUIRED", "Keep the invoice, delivery coverage and duplicate-invoice checks."
             )
         expected["requirements"] = validated
         for key, template in base["templates"].items():

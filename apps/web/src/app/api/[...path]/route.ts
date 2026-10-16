@@ -1,7 +1,7 @@
 /**
  * Same-origin proxy to the private CaseProof API.
- * The browser never talks to the API directly. Client-supplied identity headers are dropped; in a hosted
- * deployment the verified IAP assertion is forwarded together with this service's own identity token.
+ * The browser never talks to the API directly. Client-supplied identity headers are dropped. The web
+ * forwards cookies and, when configured, a verified IAP assertion together with this service's own identity token.
  */
 import { NextRequest } from "next/server";
 
@@ -46,6 +46,9 @@ async function proxy(request: NextRequest, ctx: { params: Promise<{ path: string
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }
+  const forwarded = request.headers.get("x-forwarded-for");
+  const client = forwarded?.split(",").at(-1)?.trim();
+  if (client) headers.set("x-caseproof-client", client.slice(0, 80));
   const assertion = request.headers.get("x-goog-iap-jwt-assertion");
   if (assertion && process.env.CASEPROOF_TRUST_IAP === "true")
     headers.set("x-goog-iap-jwt-assertion", assertion);

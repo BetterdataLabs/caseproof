@@ -16,7 +16,18 @@ from sqlalchemy.orm import Session
 
 from . import catalog
 from .actors import Actor
-from .checks import CHECKS_VERSION, CheckResult, ClaimView, PartyView, evaluate
+from .checks import (
+    CHECKS_VERSION,
+    DUPLICATE_INVOICE_KEY,
+    DUPLICATE_INVOICE_LABEL,
+    CheckResult,
+    ClaimView,
+    PartyView,
+    PeerInvoice,
+    active_invoice,
+    evaluate,
+    evaluate_duplicate_invoice,
+)
 from .document_checks import eligible
 from .errors import Conflict, NotFound, Unsupported
 from .evidence import ingest_pdf, ingest_written_message, version_views
@@ -65,6 +76,49 @@ def claims_of(session: Session, case_id: uuid.UUID) -> list[MaterialClaim]:
     )
 
 
+def peer_invoices(session: Session, case: Case) -> list[PeerInvoice]:
+    """Other cases in this organisation that already carry a seller invoice identity."""
+    peers: list[PeerInvoice] = []
+    others = session.execute(select(Case).where(Case.org_id == case.org_id, Case.id != case.id)).scalars()
+    for other in others:
+        if other.lifecycle == "archived":
+            continue
+        invoice = active_invoice(version_views(session, other.id))
+        number = other.invoice_reference or (invoice.facts.get("invoice_number", "") if invoice else "")
+        if not number:
+            continue
+        peers.append(
+            PeerInvoice(
+                reference=other.reference,
+                seller=other.seller.get("name", ""),
+                invoice_number=number,
+                total_amount=invoice.facts.get("total_amount", "") if invoice else "",
+                lifecycle=other.lifecycle,
+                currency=invoice.facts.get("currency", "") if invoice else "",
+            )
+        )
+    return peers
+
+
+def ensure_questions(session: Session, case: Case, results: dict[str, CheckResult]) -> dict[str, Question]:
+    """Create checklist rows for platform holds that older policy versions omitted."""
+    questions = questions_of(session, case.id)
+    labels = {rule["key"]: rule["label"] for rule in definition_for(policy_of(session, case))["requirements"]}
+    labels.setdefault(DUPLICATE_INVOICE_KEY, DUPLICATE_INVOICE_LABEL)
+    for key in results:
+        if key not in questions:
+            session.add(
+                Question(
+                    org_id=case.org_id,
+                    case_id=case.id,
+                    requirement_key=key,
+                    label=labels.get(key, key),
+                )
+            )
+    session.flush()
+    return questions_of(session, case.id)
+
+
 def compute_checks(session: Session, case: Case) -> dict[str, CheckResult]:
     claims = [
         ClaimView(str(c.id), c.requirement_key, c.status, c.conditions) for c in claims_of(session, case.id)
@@ -73,6 +127,11 @@ def compute_checks(session: Session, case: Case) -> dict[str, CheckResult]:
         {}
         if case.scenario_key == "uploaded"
         else evaluate(parties_of(case), version_views(session, case.id), claims)
+    )
+    # Uploaded evidence keeps the flexible, source-grounded review engine. The book-level
+    # hold is independent of the model and cannot be waived by a policy interpretation.
+    baseline[DUPLICATE_INVOICE_KEY] = evaluate_duplicate_invoice(
+        parties_of(case), version_views(session, case.id), peer_invoices(session, case)
     )
     return combine_checks(session, case, baseline)
 
@@ -117,7 +176,7 @@ def apply_checks(session: Session, case: Case, actor: Actor, *, resolve: bool) -
     evidence ingestion can only invalidate."""
     results = compute_checks(session, case)
     sync_review_tasks(session, case, actor)
-    questions = questions_of(session, case.id)
+    questions = ensure_questions(session, case, results)
     tasks = open_tasks(session, case.id)
     blocked_keys = {k for t in tasks for k in t.requirement_keys}
     requested = outstanding_question_ids(session, case.id)
@@ -402,9 +461,19 @@ def create_case(
     )
     session.add(case)
     session.flush()
+    keys = {req["key"] for req in policy.definition["requirements"]}
     for req in policy.definition["requirements"]:
         session.add(
             Question(org_id=case.org_id, case_id=case.id, requirement_key=req["key"], label=req["label"])
+        )
+    if DUPLICATE_INVOICE_KEY not in keys:
+        session.add(
+            Question(
+                org_id=case.org_id,
+                case_id=case.id,
+                requirement_key=DUPLICATE_INVOICE_KEY,
+                label=DUPLICATE_INVOICE_LABEL,
+            )
         )
     session.flush()
     record(

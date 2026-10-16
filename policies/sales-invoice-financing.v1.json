@@ -24,6 +24,14 @@
         "invoice",
         "delivery_receipt"
       ]
+    },
+    {
+      "key": "duplicate_invoice",
+      "label": "Invoice is not already on another case in this book",
+      "description": "The same seller, invoice number and stated amount must not already appear on another open or completed case in this organisation. A hold here is a book-level control; it is not a financing decision and it is not the same as a copied file on one case.",
+      "depends_on_roles": [
+        "invoice"
+      ]
     }
   ],
   "source_roles": {

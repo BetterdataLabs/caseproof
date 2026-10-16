@@ -10,6 +10,7 @@ import hashlib
 import json
 import logging
 import re
+import time
 import uuid
 from decimal import Decimal
 from typing import Any, Literal
@@ -40,17 +41,23 @@ from ..credit_research import allocate_budget as allocate_research_budget
 from ..db import global_session, org_session
 from ..document_checks import configure_checks
 from ..document_content import EXTENSIONS, identify_format, image_preview
-from ..errors import Conflict, DomainError, Forbidden, NotFound, StaleRevision, Unsupported
+from ..errors import Conflict, DomainError, Forbidden, NotFound, StaleRevision, Throttled, Unsupported
+from ..exports import client_artifact
 from ..history import bump, lock_case, record, utcnow
 from ..identity import (
+    DEMO_COOKIE,
     SESSION_COOKIE,
     SESSION_MAX_AGE,
     SessionData,
+    access_code_matches,
     actor_for,
     csrf_token,
-    is_loopback,
+    demo_cookie_valid,
+    demo_gate_required,
+    dev_sign_in_allowed,
     memberships_for,
     new_session,
+    sign_demo_gate,
     sign_session,
 )
 from ..intake import MAX_FILE_BYTES, MAX_FILES, MAX_UPLOAD_BYTES, Upload, add_input, create_uploaded_case
@@ -264,11 +271,94 @@ def health() -> dict[str, Any]:
     }
 
 
+_UNLOCK_WINDOW_S = 600
+_UNLOCK_LIMIT = 8
+_unlock_failures: dict[str, list[float]] = {}
+
+
+def _client_addr(request: Request) -> str:
+    # Set by our web proxy from the last Cloud Run hop. The API is not public.
+    client = request.headers.get("x-caseproof-client", "").strip()
+    if client:
+        return client[:80]
+    host = request.client.host if request.client else "unknown"
+    return host[:80]
+
+
+def _unlock_blocked(addr: str) -> bool:
+    now = time.monotonic()
+    recent = [stamp for stamp in _unlock_failures.get(addr, []) if now - stamp < _UNLOCK_WINDOW_S]
+    _unlock_failures[addr] = recent
+    return len(recent) >= _UNLOCK_LIMIT
+
+
+def _remember_unlock_failure(addr: str) -> None:
+    _unlock_failures.setdefault(addr, []).append(time.monotonic())
+
+
+def _set_session_cookie(response: Response, data: SessionData) -> None:
+    response.set_cookie(
+        SESSION_COOKIE,
+        sign_session(data),
+        max_age=SESSION_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=settings.environment == "cloud",
+        path="/",
+    )
+
+
+def _persona_home(subject: str, org_id: uuid.UUID) -> str:
+    from ..seed import showcase_ids
+
+    showcase = showcase_ids(org_id)
+    if subject == "dev:vendor" and showcase["completed_case_id"]:
+        return f"/vendor/{showcase['completed_case_id']}"
+    if subject == "dev:vendor":
+        return "/vendor"
+    if showcase["reading_case_id"]:
+        return f"/cases/{showcase['reading_case_id']}"
+    return "/queue"
+
+
+@app.get("/v1/demo/gate")
+def demo_gate(request: Request) -> dict[str, Any]:
+    required = demo_gate_required()
+    return {"required": required, "unlocked": (not required) or demo_cookie_valid(request)}
+
+
+class UnlockIn(BaseModel):
+    code: str = Field(min_length=1, max_length=80)
+
+
+@app.post("/v1/demo/unlock")
+def demo_unlock(body: UnlockIn, request: Request, response: Response) -> dict[str, Any]:
+    if not demo_gate_required():
+        raise NotFound("NOT_AVAILABLE", "Not available.")
+    addr = _client_addr(request)
+    if _unlock_blocked(addr):
+        raise Throttled("TOO_MANY_ATTEMPTS", "Too many attempts. Wait a few minutes and try again.")
+    if not access_code_matches(body.code):
+        _remember_unlock_failure(addr)
+        raise Forbidden("ACCESS_DENIED", "That access code was not accepted.")
+    _unlock_failures.pop(addr, None)
+    response.set_cookie(
+        DEMO_COOKIE,
+        sign_demo_gate(),
+        max_age=SESSION_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=settings.environment == "cloud",
+        path="/",
+    )
+    return {"ok": True}
+
+
 @app.get("/v1/dev/personas")
 def personas(request: Request) -> dict[str, Any]:
     from ..seed import PUBLIC_PERSONAS
 
-    if not settings.dev_identity or settings.environment == "cloud" or not is_loopback(request):
+    if not dev_sign_in_allowed(request):
         raise NotFound("NOT_AVAILABLE", "Not available.")
     with global_session() as session:
         rows = session.execute(
@@ -301,29 +391,24 @@ class LoginIn(BaseModel):
 
 @app.post("/v1/dev/login")
 def dev_login(body: LoginIn, request: Request, response: Response) -> dict[str, Any]:
-    if not settings.dev_identity or settings.environment == "cloud" or not is_loopback(request):
+    if not dev_sign_in_allowed(request):
         raise NotFound("NOT_AVAILABLE", "Not available.")
     if not body.subject.startswith("dev:"):
         raise Forbidden("NOT_A_DEV_IDENTITY", "Only seeded development identities can sign in here.")
     user, memberships = memberships_for(body.subject)
     if not memberships:
         raise Forbidden("NO_MEMBERSHIP", "This identity has no active membership.")
-    data = new_session(body.subject, str(memberships[0][1].id))
-    response.set_cookie(
-        SESSION_COOKIE,
-        sign_session(data),
-        max_age=SESSION_MAX_AGE,
-        httponly=True,
-        samesite="lax",
-        secure=False,
-        path="/",
-    )
-    return {"ok": True}
+    org = memberships[0][1]
+    data = new_session(body.subject, str(org.id))
+    _set_session_cookie(response, data)
+    return {"ok": True, "home": _persona_home(body.subject, org.id)}
 
 
 @app.post("/v1/session/logout")
 def logout(response: Response) -> dict[str, Any]:
-    response.delete_cookie(SESSION_COOKIE, path="/")
+    secure = settings.environment == "cloud"
+    response.delete_cookie(SESSION_COOKIE, path="/", samesite="lax", httponly=True, secure=secure)
+    response.delete_cookie(DEMO_COOKIE, path="/", samesite="lax", httponly=True, secure=secure)
     return {"ok": True}
 
 
@@ -348,6 +433,8 @@ def switch_org(
 
 @app.get("/v1/session")
 def get_session(request: Request, response: Response, ctx: Ctx = Depends(current)) -> dict[str, Any]:
+    from ..seed import showcase_ids
+
     session = ctx.session
     if session is None:  # hosted identity without a bound session yet: bind CSRF to a new session id
         session = new_session(ctx.user.subject, str(ctx.actor.org_id))
@@ -381,7 +468,8 @@ def get_session(request: Request, response: Response, ctx: Ctx = Depends(current
         "csrf_token": csrf_token(session),
         "environment": settings.environment,
         "demo_mode": settings.demo_mode,
-        "dev_identity": settings.dev_identity and settings.environment != "cloud",
+        "dev_identity": settings.dev_identity,
+        "showcase": showcase_ids(ctx.actor.org_id),
         "model": {
             "name": settings.model_name,
             "location": settings.model_location,
@@ -1065,6 +1153,34 @@ def vendor_original(case_id: str, version_id: str, ctx: Ctx = Depends(current)) 
     return original(case_id, version_id, ctx)
 
 
+@app.get("/v1/vendor/cases/{case_id}/export/{fmt}")
+def vendor_export(case_id: str, fmt: Literal["pdf", "json"], ctx: Ctx = Depends(current)) -> Response:
+    with org_session(ctx.actor.org_id) as session:
+        case = load_case(session, case_id)
+        vendor.require_access(case, ctx.actor)
+        export = session.get(Export, case.current_export_id) if case.current_export_id else None
+        if export is None or export.state != "ready" or not export.pdf_key:
+            raise Conflict("EXPORT_NOT_READY", "A client review notice is not available yet.")
+        ref = export.export_ref
+        record(
+            session,
+            case,
+            "ExportDownloaded",
+            ctx.actor,
+            f"{ctx.actor.name} downloaded {ref} (client pack, {fmt}, current)",
+        )
+        data = client_artifact(export, fmt)
+    return Response(
+        content=data,
+        media_type="application/pdf" if fmt == "pdf" else "application/json",
+        headers={
+            "Content-Disposition": f'attachment; filename="{ref}.client.{fmt}"',
+            "X-Export-Status": "current",
+            "X-Export-Audience": "submitting_party",
+        },
+    )
+
+
 class AutomationIn(BaseModel):
     action: Literal["pause", "resume", "set_mode"]
     mode: Literal["off", "shadow", "autonomous"] | None = None
@@ -1248,7 +1364,13 @@ def assign(case_id: str, body: AssignIn, cmd: tuple[Ctx, str] = Depends(command)
 
 
 @app.get("/v1/exports/{export_id}/{fmt}")
-def download_export(export_id: str, fmt: Literal["pdf", "json"], ctx: Ctx = Depends(current)) -> Response:
+def download_export(
+    export_id: str,
+    fmt: Literal["pdf", "json", "client-pdf", "client-json"],
+    ctx: Ctx = Depends(current),
+) -> Response:
+    client = fmt.startswith("client-")
+    kind = "client-pdf" if client and fmt.endswith("pdf") else "client-json" if client else fmt
     with org_session(ctx.actor.org_id) as session:
         try:
             export = session.get(Export, uuid.UUID(export_id))
@@ -1258,26 +1380,33 @@ def download_export(export_id: str, fmt: Literal["pdf", "json"], ctx: Ctx = Depe
             raise NotFound("EXPORT_NOT_FOUND", "Export not found.")
         if export.state not in ("ready", "superseded") or not export.pdf_key:
             raise Conflict("EXPORT_NOT_READY", f"The summary is {export.state}.")
-        key = export.pdf_key if fmt == "pdf" else export.json_key
         case = session.get(Case, export.case_id)
         current_flag = (
             "current" if case.current_export_id == export.id and export.state == "ready" else "superseded"
         )
         ref = export.export_ref
+        pack = "client pack" if client else "review summary"
         record(
             session,
             case,
             "ExportDownloaded",
             ctx.actor,
-            f"{ctx.actor.name} downloaded {ref} ({fmt}, {current_flag})",
+            f"{ctx.actor.name} downloaded {ref} ({pack}, {kind}, {current_flag})",
         )
-    data = object_store().get(key)
+        if client:
+            data = client_artifact(export, "pdf" if kind == "client-pdf" else "json")
+        else:
+            data = object_store().get(export.pdf_key if fmt == "pdf" else export.json_key)
+    filename = (
+        f"{ref}.client.pdf" if kind == "client-pdf" else f"{ref}.client.json" if client else f"{ref}.{fmt}"
+    )
     return Response(
         content=data,
-        media_type="application/pdf" if fmt == "pdf" else "application/json",
+        media_type="application/pdf" if kind.endswith("pdf") else "application/json",
         headers={
-            "Content-Disposition": f'attachment; filename="{ref}.{fmt}"',
+            "Content-Disposition": f'attachment; filename="{filename}"',
             "X-Export-Status": current_flag,
+            "X-Export-Audience": "submitting_party" if client else "bank",
         },
     )
 
@@ -1639,7 +1768,10 @@ def controls(body: ControlsIn, cmd: tuple[Ctx, str] = Depends(command)) -> JSONR
 def evaluation(ctx: Ctx = Depends(current)) -> dict[str, Any]:
     from ..config import APP_ROOT
 
-    path = APP_ROOT / "evaluation" / "results" / "latest.json"
+    results = APP_ROOT / "evaluation" / "results"
+    path = results / "latest.json"
+    card = results / "MODEL_CARD.md"
+    model_card = card.read_text() if card.exists() else None
     if not path.exists():
-        return {"available": False}
-    return {"available": True, "report": json.loads(path.read_text())}
+        return {"available": False, "model_card": model_card}
+    return {"available": True, "report": json.loads(path.read_text()), "model_card": model_card}

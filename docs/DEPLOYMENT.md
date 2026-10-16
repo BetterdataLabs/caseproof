@@ -1,6 +1,6 @@
 # Google Cloud deployment
 
-This guide deploys CaseProof to Cloud Run with Cloud SQL, Cloud Storage, Cloud Tasks and Identity-Aware Proxy (IAP). Run the steps in order from the repository root using Bash. For local startup, use the [README](../README.md#run-locally).
+This guide deploys CaseProof to Cloud Run with Cloud SQL, Cloud Storage and Cloud Tasks. The public web asks for an access code. The API, worker, database and bucket stay private. Run the steps in order from the repository root using Bash. For local startup, use the [README](../README.md#run-locally).
 
 The local app and container builds have been verified. A hosted end-to-end deployment has not yet been verified; complete step 8 before sharing a hosted demo.
 
@@ -8,7 +8,7 @@ The local app and container builds have been verified. A hosted end-to-end deplo
 
 | Component               | Deployment                                                           |
 | ----------------------- | -------------------------------------------------------------------- |
-| Web                     | Next.js container on Cloud Run, protected by IAP                     |
+| Web                     | Next.js container on Cloud Run, public, gated by an access code      |
 | API                     | Private Cloud Run service using the backend image with `ROLE=api`    |
 | Worker                  | Private Cloud Run service using the backend image with `ROLE=worker` |
 | Database                | Cloud SQL for PostgreSQL 17                                          |
@@ -17,13 +17,13 @@ The local app and container builds have been verified. A hosted end-to-end deplo
 | Reconciliation          | Cloud Scheduler invokes `POST /jobs/reconcile` every minute          |
 | Migration and seed      | One-off Cloud Run jobs using the backend image                       |
 
-Cloud Tasks and scheduled reconciliation replace the local dispatcher process. The web forwards the signed IAP assertion to the API and authenticates to Cloud Run with its own service identity.
+Cloud Tasks and scheduled reconciliation replace the local dispatcher process. The web authenticates to the private API with its own service identity and forwards the browser's cookies. Judges do not need Google accounts.
 
 ## 1. Prepare the project
 
 Install an up-to-date [Google Cloud CLI](https://cloud.google.com/sdk/docs/install), Docker with Buildx, Python 3 and the PostgreSQL `psql` client. Use a billing-enabled Google Cloud project. The operator needs permission to create the listed resources, manage IAM, enable services, access secrets and act as the deployment service accounts. Confirm Vertex AI access to the configured Gemini model.
 
-Set your deployment values. Keep this shell open for the remaining steps. Replace the project ID and all three account addresses with real Google identities.
+Set your deployment values. Keep this shell open for the remaining steps. Replace the project ID. Do not put the access code in this shell's history or in the repository.
 
 ```bash
 export PROJECT_ID="YOUR_PROJECT_ID"
@@ -33,9 +33,6 @@ export REGISTRY="caseproof"
 export BUCKET="${PROJECT_ID}-caseproof-objects"
 export QUEUE="caseproof-jobs"
 export RELEASE="v1"
-export REVIEWER_EMAIL="reviewer@example.com"
-export VENDOR_EMAIL="vendor@example.com"
-export VIEWER_EMAIL="viewer@example.com"
 
 gcloud auth login
 gcloud config set project "$PROJECT_ID"
@@ -49,7 +46,6 @@ gcloud services enable \
   cloudscheduler.googleapis.com \
   secretmanager.googleapis.com \
   aiplatform.googleapis.com \
-  iap.googleapis.com \
   iam.googleapis.com \
   iamcredentials.googleapis.com
 
@@ -150,7 +146,16 @@ for role in cp_owner cp_app cp_dispatcher; do
 done
 gcloud secrets create caseproof-session-secret \
   --replication-policy=automatic --data-file=.data/deploy/session-secret
+
+printf 'Demo access code (it will not be saved in the repo): '
+read -rs DEMO_ACCESS_CODE
+printf '\n'
+printf '%s' "$DEMO_ACCESS_CODE" | gcloud secrets create caseproof-demo-access-code \
+  --replication-policy=automatic --data-file=-
+unset DEMO_ACCESS_CODE
 ```
+
+Use the same value as `CASEPROOF_DEMO_ACCESS_CODE` in the local `.env`. Compose and Cloud Run then show the same access-code screen.
 
 Grant database connectivity to the backend identities, and storage/task access to the runtime services:
 
@@ -182,6 +187,12 @@ gcloud secrets add-iam-policy-binding caseproof-cp_owner-url \
 gcloud secrets add-iam-policy-binding caseproof-session-secret \
   --member="serviceAccount:caseproof-api@${PROJECT_ID}.iam.gserviceaccount.com" \
   --role=roles/secretmanager.secretAccessor
+gcloud secrets add-iam-policy-binding caseproof-demo-access-code \
+  --member="serviceAccount:caseproof-api@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role=roles/secretmanager.secretAccessor
+gcloud storage buckets add-iam-policy-binding "gs://${BUCKET}" \
+  --member="serviceAccount:caseproof-migrate@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role=roles/storage.objectUser
 
 for role in roles/aiplatform.user roles/serviceusage.serviceUsageConsumer; do
   gcloud projects add-iam-policy-binding "$PROJECT_ID" \
@@ -193,7 +204,7 @@ done
 Create the Google-managed service identities used for delivery and sign-in, and ensure the task and scheduler service agents retain their service-agent roles:
 
 ```bash
-for service in cloudtasks.googleapis.com cloudscheduler.googleapis.com iap.googleapis.com; do
+for service in cloudtasks.googleapis.com cloudscheduler.googleapis.com; do
   gcloud beta services identity create --service="$service" --project="$PROJECT_ID"
 done
 
@@ -245,17 +256,13 @@ import json
 import os
 from pathlib import Path
 
-roles = {
-    "REVIEWER_EMAIL": "reviewer,supervisor,environment_admin,simulation_operator",
-    "VENDOR_EMAIL": "vendor",
-    "VIEWER_EMAIL": "auditor",
-}
-args = " ".join(f"--iap-user {os.environ[key]}={value}" for key, value in roles.items())
 Path(".data/deploy/seed.json").write_text(json.dumps({
     "ROLE": "seed",
     "CASEPROOF_ENVIRONMENT": "cloud",
     "CASEPROOF_DEV_IDENTITY": "false",
-    "SEED_ARGS": args,
+    "CASEPROOF_STORAGE_BACKEND": "gcs",
+    "CASEPROOF_GCS_BUCKET": os.environ["BUCKET"],
+    "SEED_ARGS": "",
 }, indent=2))
 PY
 
@@ -269,7 +276,7 @@ gcloud run jobs deploy caseproof-seed \
   --execute-now --wait
 ```
 
-The invited reviewer can explore all bank demo controls; the vendor and viewer have their own roles. These memberships belong to the seeded Straits Commercial organisation. IAP access is granted separately in step 7. Re-running the seed adds missing accounts and memberships; it does not change roles on existing memberships. Use separate Google accounts or browser profiles to explore the three workspaces.
+Seed also leaves two Straits cases that do not wait on Vertex: an open case whose quote and checklist are already on screen, and a completed case whose client notice is one click away. Re-running the seed adds missing accounts and does not create a second copy of those cases. It does not change roles on existing memberships. The access code is not part of this job.
 
 ## 6. Deploy the worker and API
 
@@ -318,19 +325,17 @@ gcloud run services add-iam-policy-binding caseproof-worker \
 
 The first deployment obtains the worker's stable service URL. The immediate update configures that same URL as its expected task-token audience before any jobs are submitted.
 
-Create the API environment by reusing the shared configuration and setting the web service's IAP audience:
+Create the API environment by reusing the shared configuration and turning on the seeded personas behind the access code:
 
 ```bash
 cp .data/deploy/worker.yaml .data/deploy/api.yaml
 python3 - <<'PY'
-import os
 from pathlib import Path
 
 path = Path(".data/deploy/api.yaml")
 text = path.read_text().replace('ROLE: "worker"', 'ROLE: "api"')
-audience = (f"/projects/{os.environ['PROJECT_NUMBER']}"
-            f"/locations/{os.environ['REGION']}/services/caseproof-web")
-path.write_text(text + f'CASEPROOF_IAP_AUDIENCE: "{audience}"\n')
+text = text.replace('CASEPROOF_DEV_IDENTITY: "false"', 'CASEPROOF_DEV_IDENTITY: "true"')
+path.write_text(text)
 PY
 
 gcloud run deploy caseproof-api \
@@ -338,7 +343,7 @@ gcloud run deploy caseproof-api \
   --service-account="caseproof-api@${PROJECT_ID}.iam.gserviceaccount.com" \
   --set-cloudsql-instances="$SQL_CONNECTION" \
   --env-vars-file=.data/deploy/api.yaml \
-  --set-secrets="CASEPROOF_DATABASE_URL=caseproof-cp_app-url:1,CASEPROOF_SESSION_SECRET=caseproof-session-secret:1" \
+  --set-secrets="CASEPROOF_DATABASE_URL=caseproof-cp_app-url:1,CASEPROOF_SESSION_SECRET=caseproof-session-secret:1,CASEPROOF_DEMO_ACCESS_CODE=caseproof-demo-access-code:1" \
   --port=8080 --cpu=1 --memory=1Gi \
   --concurrency=20 --min=0 --max=4 --timeout=300 \
   --no-allow-unauthenticated
@@ -360,7 +365,6 @@ The services use IAM authentication while retaining default network ingress so t
 cat > .data/deploy/web.yaml <<EOF
 CASEPROOF_API_URL: "${API_URL}"
 CASEPROOF_API_AUDIENCE: "${API_URL}"
-CASEPROOF_TRUST_IAP: "true"
 EOF
 
 gcloud run deploy caseproof-web \
@@ -369,12 +373,7 @@ gcloud run deploy caseproof-web \
   --env-vars-file=.data/deploy/web.yaml \
   --port=8080 --cpu=1 --memory=512Mi \
   --concurrency=40 --min=0 --max=4 --timeout=300 \
-  --no-allow-unauthenticated --iap
-
-gcloud run services add-iam-policy-binding caseproof-web \
-  --region="$REGION" \
-  --member="serviceAccount:service-${PROJECT_NUMBER}@gcp-sa-iap.iam.gserviceaccount.com" \
-  --role=roles/run.invoker
+  --allow-unauthenticated
 
 export WEB_URL="$(gcloud run services describe caseproof-web \
   --region="$REGION" --format='value(status.url)')"
@@ -384,36 +383,16 @@ gcloud run services update caseproof-api --region="$REGION" \
   --env-vars-file=.data/deploy/api.yaml
 ```
 
-If this is the first IAP setup in a project without a Google Cloud organisation, the CLI may require initial setup in the console. In **Cloud Run → caseproof-web → Security**, select **Require authentication → Identity-Aware Proxy** and complete the initial consent setup. If the service was not created by the failed command, deploy it using the command above with only `--iap` omitted, then enable IAP in the console before continuing.
+The web hostname is public. The access code is the gate. Put that code on the hackathon form and on the PDF you upload. Do not commit it, and do not write it into the deck file in git.
 
-For reviewers outside the project's organisation:
+Two configuration values have distinct purposes:
 
-1. Open the web service's IAP settings through **Configure in IAP**.
-2. Configure the OAuth consent screen with an **External** audience and the required app/contact details.
-3. Use **Auto generate credentials**, or create a custom **Web application** OAuth client and select **Custom OAuth** in IAP.
-4. If configuring the client manually, register `https://iap.googleapis.com/v1/oauth/clientIds/CLIENT_ID:handleRedirect` as its authorized redirect URI, replacing `CLIENT_ID`.
-5. If the consent screen remains in Testing, add the invited reviewers as OAuth test users.
-6. Save the IAP configuration, then grant the invited identities access:
+| Value                                  | Required setting                                     |
+| -------------------------------------- | ---------------------------------------------------- |
+| Private API Cloud Run URL              | Web `CASEPROOF_API_URL` and `CASEPROOF_API_AUDIENCE` |
+| Browser origin, with no trailing slash | API `CASEPROOF_ALLOWED_ORIGINS`                      |
 
-```bash
-for email in "$REVIEWER_EMAIL" "$VENDOR_EMAIL" "$VIEWER_EMAIL"; do
-  gcloud iap web add-iam-policy-binding \
-    --resource-type=cloud-run --service=caseproof-web --region="$REGION" \
-    --member="user:${email}" --role=roles/iap.httpsResourceAccessor
-done
-```
-
-For same-organisation users with the Google-managed OAuth client, only the access grants are needed. Google documents both paths in [IAP for Cloud Run](https://cloud.google.com/run/docs/securing/identity-aware-proxy-cloud-run).
-
-Three configuration values have distinct purposes:
-
-| Value                                      | Required setting                                                                                 |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| Private API Cloud Run URL                  | Web `CASEPROOF_API_URL` and `CASEPROOF_API_AUDIENCE`                                             |
-| Browser origin, with no trailing slash     | API `CASEPROOF_ALLOWED_ORIGINS`                                                                  |
-| IAP audience for the protected web service | API `CASEPROOF_IAP_AUDIENCE`: `/projects/PROJECT_NUMBER/locations/REGION/services/caseproof-web` |
-
-This guide enables IAP directly on Cloud Run. A deployment using IAP on a load balancer has a different [signed-header audience](https://cloud.google.com/iap/docs/signed-headers-howto). Changing a browser hostname also requires updating the API's allowed origins.
+Changing a browser hostname also requires updating the API's allowed origins. The API refuses to boot if development identities are on and the access-code secret is empty.
 
 ## 8. Start reconciliation and verify the app
 
@@ -441,9 +420,9 @@ gcloud run services describe caseproof-web \
 
 Complete these checks before sharing that URL:
 
-1. Sign in with each invited Google identity. Confirm the reviewer, vendor and viewer workspaces match their memberships.
-2. As the vendor, submit the [sample invoice and receipt](../apps/web/public/sample-documents/caseproof-upload-example.zip). Confirm processing starts and a missing-evidence request appears.
-3. Upload the corrected invoice and remaining receipt. As the reviewer, inspect the completed checklist and download PDF and JSON summaries.
+1. Enter the access code. The next screen is an open case with a quote, a page, and the checklist. **Client notice** opens the completed case, with the client PDF on the review summary.
+2. Use **Switch persona** and open Sam Lim. The completed submission's client notice is on that page. Return to Alex Chen.
+3. As Sam, submit the [sample invoice and receipt](../apps/web/public/sample-documents/caseproof-upload-example.zip). Confirm processing starts. The seeded client notice stays available if that live correction is still running.
 4. Confirm original documents remain downloadable after a service revision or restart.
 5. Inspect **Operations**, the Cloud Tasks queue and Scheduler execution logs for successful delivery and reconciliation.
 6. Use the [demo verification guide](TESTING.md) to check policy changes, decisions, document checks and optional research.
@@ -452,9 +431,9 @@ Complete these checks before sharing that URL:
 
 | Symptom                                             | Check                                                                                                                             |
 | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| IAP rejects the account                             | IAP access grant, organisation policy, external OAuth setup and any OAuth test-user list                                          |
-| Sign-in works but CaseProof reports an unknown user | Seed the same email address received through IAP; an IAP grant alone does not create app membership                               |
-| API returns an identity error                       | Web assertion forwarding and the API's IAP audience; use the project number and protected web service, not the API URL            |
+| Access code is rejected                             | Secret `caseproof-demo-access-code` on the API, and `CASEPROOF_DEV_IDENTITY=true` only on the API                                  |
+| API refuses to start                                | Cloud with development identities requires the access-code secret. The worker keeps development identities off                    |
+| Sign-in stays on the code form                      | Web is public, the unlock cookie is HttpOnly, and the API allowed origin matches the browser URL                                  |
 | Web receives 403 from the API                       | Web service identity has Cloud Run Invoker on the API and uses its service URL as audience                                        |
 | Changes fail origin validation                      | API allowed origins exactly match the browser's scheme and hostname                                                               |
 | Database connection fails                           | Cloud SQL attachment, client role, secret version, database passwords and migrations                                              |

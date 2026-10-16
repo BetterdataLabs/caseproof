@@ -4091,8 +4091,9 @@
   }
  ],
  "notes": [
-  "Manual effort is an estimate from the stated time model, not a measurement of staff; manual outcomes are assumed correct.",
-  "Rules and agent conditions run the same platform, documents, checklist, staged replies and scripted reviewer decisions.",
+  "The result that matters is zero incorrect completions on both the agent and the fixed-rule baseline: the language model matched the checklist; it did not beat it.",
+  "Staff minutes (manual 1440, rules 100, agent 110) come from the stated time model, not a user study, and do not establish a staff-time or ROI advantage.",
+  "Manual outcomes are assumed correct. Rules and agent conditions run the same platform, documents, checklist, staged replies and scripted reviewer decisions.",
   "The agent receives no expectations or future events; expectations are compared only after each case finishes.",
   "Zero observed failures on this set does not establish a bank-grade error rate."
  ]

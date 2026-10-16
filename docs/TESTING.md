@@ -7,7 +7,7 @@ Use the [README](../README.md#run-locally) to start the app, then follow the [re
 1. As **Sam**, submit the invoice and first receipt from the sample pack. Confirm that the new case appears in both the vendor and bank workspaces.
 2. As **Alex**, inspect the source documents, extracted facts, checklist and issued request.
 3. As **Sam**, supply the corrected invoice and remaining receipt. Wait for each upload to finish processing.
-4. As **Alex**, inspect the completed review and download both the PDF and JSON summaries.
+4. As **Alex**, inspect the completed review and download the bank PDF/JSON and the client pack. The client pack omits reviewer names, staff notes and model traces. As **Sam**, download only the client review notice.
 5. Send a written receipt dispute. Confirm that review reopens and a decision task refers to the message and affected evidence. Record a decision with a reason.
 6. As **Aisha**, inspect the same case and its documents. Case-changing controls should be unavailable.
 
@@ -32,9 +32,13 @@ Some scenarios deliberately remain open: scenario 13 includes tax and another go
 
 **Company research:** enable research for an authorised invoice naming an identifiable public company and select the correct registration country. Inspect **Company credit research → Sources and search record**. The fictional samples exercise insufficient-information handling. See [the research guide](CREDIT_RESEARCH.md) for interpretation.
 
+**Workspace permissions:** use **Alex Chen** for bank review, policy publication and budget extensions. **Sam Lim** can submit and reply to assigned cases; **Aisha Tan** has read-only access. The login picker contains only those three accounts.
+
+**Same invoice, second case:** after one case has an identified seller invoice, create another case with the same invoice PDF. The new case must stay on hold with reason `DUPLICATE_INVOICE`. A copied receipt on the *same* case is scenario 04 and is a different check.
+
 ## Saved comparison report
 
-The saved comparison report is available at [evaluation/results/latest.json](../evaluation/results/latest.json). It records 60 constructed cases across 12 scenario families, run on **12 October 2026** with Gemini 3.8 Flash through Vertex AI's global endpoint.
+The [model card](../evaluation/results/MODEL_CARD.md) describes intended use and provider boundaries. There is no Evaluation page. The saved comparison report is available at [evaluation/results/latest.json](../evaluation/results/latest.json). It records 60 constructed cases across 12 scenario families, run on **12 October 2026** with Gemini 3.8 Flash through Vertex AI's global endpoint.
 
 | Agent result                                     | Recorded value |
 | ------------------------------------------------ | -------------- |
@@ -47,7 +51,7 @@ The saved comparison report is available at [evaluation/results/latest.json](../
 | Model calls                                      | 342            |
 | Model cost                                       | USD 0.8316     |
 
-The fixed-rule baseline also had no incorrect or missed completions. Estimated staff time was 100 minutes for the baseline and 110 for the agent. Those estimates come from the report's time model, not a user study, and do not establish a staff-time advantage. The comparison does not measure arbitrary uploaded-PDF extraction accuracy.
+The result that matters is **zero incorrect or missed completions** on both the agent and the fixed-rule baseline: the language model matched the checklist; it did not beat it. The report also models 100 staff minutes for the baseline and 110 for the agent. Those figures are a time model, not a user study, and must not be presented as a staff-time or ROI saving. The comparison does not measure arbitrary uploaded-PDF extraction accuracy.
 
 The current report uses corrected receipt timestamps. The [superseded report](archive/evaluation/gemini-3.8-flash-original-fixtures.json) remains available as a historical artifact.
 

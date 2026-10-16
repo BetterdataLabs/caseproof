@@ -53,7 +53,7 @@ Paths below are relative to `services/backend/src/caseproof/`.
 | Company research     | `credit_research.py`, `automation/research.py`                                 | Opt-in public searches, validated citation references, saved progress and report synthesis                         |
 | Document appearance  | `document_checks.py`, `visual_pdf.py`, `automation/visual.py`                  | Case options, reference originals, PDF layers, image comparison and appearance tasks                               |
 | Background execution | `jobs.py`, `queue.py`, `dispatcher.py`, `worker.py`, `automation/runner.py`    | Outbox delivery, leases, recovery and timer work                                                                   |
-| Records and output   | `models.py`, `history.py`, `exports.py`, `views.py`                            | Database records, audit history, snapshots and API views                                                           |
+| Records and output   | `models.py`, `history.py`, `exports.py`, `views.py`                            | Database records, audit history, frozen snapshots, bank summaries and the client pack                              |
 
 `automation/rules.py` is the fixed-rule controller used by tests and the evaluation baseline. It uses the same domain commands without a language model.
 
@@ -68,6 +68,8 @@ Organisation, case, policy and lease scope come from the worker context. Model a
 The agent can request evidence and propose review work. It cannot approve financing, change the application, make payments, publish policies or dismiss written messages without a recorded human decision.
 
 ## Evidence rules
+
+- A separate deterministic control holds a case when its seller invoice already appears on another active or completed case in the same organisation. It does not replace the uploaded-document review engine or decide financing.
 
 - Uploaded invoices are interpreted by Gemini across all line items, quantities, currencies and adjustments. Source-grounded calculation plans run through an exact decimal calculator before the final assessment.
 - Receipt evidence is matched to invoices by meaning and supporting references, including partial and cumulative deliveries and evidenced unit conversions.
@@ -96,7 +98,7 @@ Findings, reference hashes and reviewer reasons are included in the frozen summa
 
 Mutating API requests use an idempotency key and expected revision. A stale revision returns HTTP 412. Related state changes, history entries and outbox work commit in one database transaction.
 
-Runtime database roles do not have row-security bypass privileges. Organisation context is set for database access. Hosted identity uses verified IAP assertions; development sign-in is limited to local mode.
+Runtime database roles do not have row-security bypass privileges. Organisation context is set for database access. Docker Compose and Cloud Run use the same access code before the seeded personas can sign in. Identity-Aware Proxy still applies when a verified assertion is present and development identities are off.
 
 The browser receives raster document previews. Downloads and summaries require access to their case. Uploaded text and typed sender names are evidence, not authenticated proof of an organisation's identity.
 
@@ -106,7 +108,7 @@ Viewer accounts can read the bank workspace. The API rejects case-changing comma
 
 ### Local accounts
 
-The sign-in page presents three personas. Use **Switch persona** in the profile menu or vendor header to follow a shared case from different perspectives.
+The sign-in page presents the three accounts from the submitted application: Alex, Sam and Aisha. Use **Switch persona** to follow a shared case across bank review, vendor replies and read-only viewing.
 
 | Account                | Role and purpose                                                                                      |
 | ---------------------- | ----------------------------------------------------------------------------------------------------- |
@@ -114,7 +116,7 @@ The sign-in page presents three personas. Use **Switch persona** in the profile 
 | Sam Lim (`dev:vendor`) | Vendor portal: submit documents and respond to bank requests on their own cases                       |
 | Aisha Tan              | Viewer: read cases, documents and history without changing the case                                   |
 
-These personas share the Straits Commercial review workflow. Additional seeded staff identities and Li Wei in Lumen Bank remain available to role and organisation-isolation tests; they are not shown in the persona picker. Existing case ownership, assignments and memberships are preserved.
+These personas share the Straits Commercial review workflow. Li Wei in Lumen Bank remains available to organisation-isolation tests and is not shown in the persona picker. Existing case ownership, assignments and memberships are preserved.
 
 ## Policy and operating limits
 
@@ -134,4 +136,4 @@ The local demo uses Docker Compose to manage PostgreSQL, the API, worker, dispat
 
 Only the web port is published, on host loopback, in the production demo. The web shares the API's network namespace so persona authentication still arrives from loopback; the API and worker are not published to the host. Backend services run as the non-root application user. The setup container prepares volume permissions, then drops privileges before running migrations and seeding. The [development configuration](DEVELOPMENT.md) mounts source from the current checkout for live reload and exposes PostgreSQL on loopback port 56543 for local tools and tests.
 
-The cloud configuration targets Cloud Run, Cloud SQL, Cloud Tasks, Cloud Scheduler and GCS, with IAP on the web service. The [deployment reference](DEPLOYMENT.md) describes configuration, setup order and [current limits](DEPLOYMENT.md#current-limits).
+The cloud configuration targets Cloud Run, Cloud SQL, Cloud Tasks, Cloud Scheduler and GCS. The access-code screen is the same one Docker Compose shows. The API stays private. The [deployment reference](DEPLOYMENT.md) describes configuration, setup order and [current limits](DEPLOYMENT.md#current-limits).

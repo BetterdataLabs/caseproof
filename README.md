@@ -22,7 +22,7 @@ cd bfsi-aibuildercup2026
 test -f .env || cp .env.example .env
 ```
 
-If you already have the repository, run the configuration command from its root. Edit `.env` and replace the project placeholder:
+If you already have the repository, run the configuration command from its root. Edit `.env` and replace the project placeholder. Set `CASEPROOF_DEMO_ACCESS_CODE` to the same value you will store in Secret Manager for Cloud Run. Do not commit it.
 
 ```dotenv
 CASEPROOF_GCP_PROJECT=YOUR_PROJECT_ID
@@ -30,7 +30,7 @@ CASEPROOF_MODEL_NAME=gemini-3.8-flash
 CASEPROOF_MODEL_LOCATION=global
 ```
 
-The configured model must be available to your project. Keep the other values from `.env.example` for the local demo.
+The configured model must be available to your project. Hosted demo personas require an access code. Locally, leaving it empty preserves the loopback-only persona picker; setting it enables the same gate used on Cloud Run. Keep the other values from `.env.example`.
 
 ### 3. Authenticate with Google Cloud
 
@@ -59,7 +59,7 @@ docker compose up --build --detach --wait
 
 The first build downloads dependencies and takes longer. Compose starts PostgreSQL, applies migrations, seeds the demo accounts and policy, then runs the API, worker, dispatcher and production web server. It waits for the database, API, worker and web health checks before returning.
 
-Open **http://localhost:3400** and choose a persona. The services run in the background; no terminals need to stay open. Port 3400 must be available.
+Open **http://localhost:3400**, enter the access code from `.env`, and the case that is already read opens. **Client notice** on that case opens a completed example. Compose and Cloud Run use this same gate. The services run in the background; no terminals need to stay open. Port 3400 must be available.
 
 ### 5. Check, stop or update the app
 
@@ -86,19 +86,21 @@ After pulling an update or changing `.env`, apply it with:
 docker compose up --build --detach --wait
 ```
 
-The setup step preserves existing cases. Services restart automatically after a process failure while Docker is running. This Compose configuration is for a local demo and publishes only the web port on loopback. For a shared hosted app with Google sign-in, follow [Deploy to Google Cloud](#deploy-to-google-cloud).
+The setup step preserves existing cases and adds the two showcase cases if they are missing. An existing local database picks them up after the image is rebuilt: `docker compose up --build --detach --wait && docker compose up --force-recreate --no-deps initialize`. Services restart automatically after a process failure while Docker is running. This Compose configuration is for a local demo and publishes only the web port on loopback. For the public hosted app, follow [Deploy to Google Cloud](#deploy-to-google-cloud).
 
 For editing the application with live reload, use the optional [development guide](docs/DEVELOPMENT.md).
 
 ## Review workflow
 
-Use **Switch persona** to follow one case across the three workspaces:
+Use **Switch persona** to follow one case across the three workspaces: Alex for the bank, Sam for the vendor and Aisha for read-only viewing.
 
-| Persona                | Available actions                                                    |
-| ---------------------- | -------------------------------------------------------------------- |
-| **Sam Lim — Vendor**   | Submit documents, read bank requests and supply corrections          |
-| **Alex Chen — Bank**   | Review cases, resolve decisions, edit policies and manage automation |
-| **Aisha Tan — Viewer** | Read cases, documents and completed summaries                        |
+| Persona                     | Available actions                                                                 |
+| --------------------------- | --------------------------------------------------------------------------------- |
+| **Sam Lim — Vendor**        | Submit documents, read bank requests and supply corrections                       |
+| **Alex Chen — Bank**        | Review cases, resolve decisions, edit policies and manage automation              |
+| **Aisha Tan — Viewer**      | Read cases, documents and completed summaries                                     |
+
+The scoring-round film is [docs/VIDEO_SCRIPT.md](docs/VIDEO_SCRIPT.md). The live finale path is [docs/JUDGE_SCRIPT.md](docs/JUDGE_SCRIPT.md). The submission deck is [docs/submission/CaseProof-AI-Builder-Cup.pptx](docs/submission/CaseProof-AI-Builder-Cup.pptx).
 
 Download and extract the [sample document pack](apps/web/public/sample-documents/caseproof-upload-example.zip):
 
@@ -106,18 +108,19 @@ Download and extract the [sample document pack](apps/web/public/sample-documents
 2. Switch to **Alex**. After processing, inspect the incorrect invoice total and missing delivery evidence.
 3. As **Sam**, open the request and upload **03-corrected-invoice.pdf** as an updated invoice.
 4. After processing finishes, upload **04-remaining-receipt.pdf** as a receipt for another delivery.
-5. As **Alex**, inspect the completed review and download its PDF or JSON summary. **Aisha** can view the same case.
+5. As **Alex**, inspect the completed review and download the bank PDF/JSON or the client pack (no reviewer names or model traces). **Aisha** can view the same case. **Sam** can download only the client notice.
 
 Explore the remaining features from the bank workspace:
 
 | Feature                    | How to try it                                                                                                                                                                  |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Reviewer decisions         | Send a written reply disputing a receipt, then review the resulting task as Alex.                                                                                              |
+| Reviewer decisions         | Send a written reply disputing a receipt, then claim the task and record the decision as **Alex**.                                   |
+| Same invoice, second case  | Submit the same seller invoice on a new case. The second case must stay on hold; this is separate from a duplicate *file* on one case.                                         |
 | Document appearance checks | Enable the optional checks when creating a case and, if available, upload reference templates.                                                                                 |
 | Company credit research    | Select the buyer or seller and its registration country when uploading a case. Use an identifiable real company to explore public sources; the sample companies are fictional. |
 | Policy                     | Add or edit review criteria, publish a version, then use **Apply policy** on an existing case.                                                                                 |
 | Operations                 | Inspect runs, pause or resume automation, and use the recovery controls.                                                                                                       |
-| Evaluation                 | Open the saved comparison report and inspect its recorded outcomes.                                                                                                            |
+| Research                   | Browse all case research, source citations, search records and retry status from the Research page.                                                                            |
 | Demo scenarios             | Open **New case → Demo scenarios**, or **Your documents → Browse the scenario library** for downloadable PDFs and walkthroughs.                                                |
 
 Uploaded documents are reviewed with Gemini using source citations and exact calculation tools. PDFs, scans, PNG/JPEG/TIFF/WebP images, DOCX, XLSX, CSV and text files are supported, including multiple items, decimal quantities, different currencies, taxes, discounts and other charges. Unreadable content or unresolved ambiguity is identified for review. See [Document review](docs/DOCUMENT_REVIEW.md) for the processing flow and limits. Appearance findings and public company research support review; they do not authenticate documents or approve financing.
@@ -132,10 +135,10 @@ Follow the [complete deployment guide](docs/DEPLOYMENT.md) in order. It includes
 4. [Build and publish both container images](docs/DEPLOYMENT.md#4-build-and-publish-the-images).
 5. [Run migrations and create application memberships](docs/DEPLOYMENT.md#5-run-migrations-and-seed-memberships).
 6. [Deploy the private worker and API](docs/DEPLOYMENT.md#6-deploy-the-worker-and-api).
-7. [Deploy the web service and configure Google sign-in with IAP](docs/DEPLOYMENT.md#7-deploy-the-web-service-and-enable-sign-in).
+7. [Deploy the public web service behind an access code](docs/DEPLOYMENT.md#7-deploy-the-web-service-and-enable-sign-in).
 8. [Schedule reconciliation and verify the hosted workflow](docs/DEPLOYMENT.md#8-start-reconciliation-and-verify-the-app).
 
-Cloud Run hosts the three services; Cloud SQL and a private Cloud Storage bucket persist data. Cloud Tasks and Cloud Scheduler replace the local dispatcher. Hosted users sign in with invited Google identities. The local persona picker is available only in local mode.
+Cloud Run hosts the three services; Cloud SQL and a private Cloud Storage bucket persist data. Cloud Tasks and Cloud Scheduler replace the local dispatcher. The sign-in screen is the same as Docker Compose: the access code, then the case that is already read. The API stays private. Put `CASEPROOF_DEMO_ACCESS_CODE` in `.env` for Compose and in Secret Manager for Cloud. The code also belongs on the hackathon form and the uploaded PDF, not in this repository.
 
 The local startup path has been verified. The cloud guide is based on the included adapters and current Google Cloud commands; a hosted end-to-end deployment has not yet been verified.
 
