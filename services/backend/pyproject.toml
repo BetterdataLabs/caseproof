@@ -2,6 +2,7 @@
 name = "caseproof-platform"
 version = "1.0.0"
 description = "CaseProof: autonomous document follow-up for invoice financing (Gemini + ADK)"
+license = "Apache-2.0"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "fastapi>=0.115",

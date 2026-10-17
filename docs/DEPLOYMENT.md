@@ -17,7 +17,7 @@ The local app and container builds have been verified. A hosted end-to-end deplo
 | Reconciliation          | Cloud Scheduler invokes `POST /jobs/reconcile` every minute          |
 | Migration and seed      | One-off Cloud Run jobs using the backend image                       |
 
-Cloud Tasks and scheduled reconciliation replace the local dispatcher process. The web forwards browser cookies to the private API and authenticates to Cloud Run with its own service identity. Judges do not need Google accounts.
+Cloud Tasks and scheduled reconciliation replace the local dispatcher process. The web forwards browser cookies to the private API and authenticates to Cloud Run with its own service identity. Demo users do not need Google accounts.
 
 ## 1. Prepare the project
 
@@ -377,7 +377,7 @@ gcloud run services update caseproof-api --region="$REGION" \
   --env-vars-file=.data/deploy/api.yaml
 ```
 
-The web hostname is public. The access code is the gate. Put that code on the hackathon form and on the PDF you upload. Do not commit it, and do not write it into the deck file in git.
+The web hostname is public. The access code is the gate. Share that code with demo users privately. Do not commit it.
 
 Two configuration values have distinct purposes:
 

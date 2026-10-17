@@ -1,5 +1,7 @@
 # CaseProof
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 CaseProof is an invoice-financing document review app built with Gemini and Google ADK. Vendors submit invoices and receipts, the agent requests missing evidence, and bank reviewers resolve questions and download PDF or JSON summaries.
 
 The app includes a vendor portal, bank review workspace, read-only access, configurable review policies, optional document appearance checks, public company research, and automation controls. It uses Next.js, FastAPI and PostgreSQL. Gemini runs on Vertex AI.
@@ -17,8 +19,8 @@ Docker builds the Python backend and the production web app. You do not need Pyt
 ### 2. Get the app and configure the project
 
 ```bash
-git clone https://github.com/BetterdataLabs/bfsi-aibuildercup2026.git
-cd bfsi-aibuildercup2026
+git clone https://github.com/BetterdataLabs/caseproof.git
+cd caseproof
 test -f .env || cp .env.example .env
 ```
 
@@ -155,3 +157,11 @@ The local startup path has been verified. The cloud guide is based on the includ
 ## Documentation
 
 The [documentation index](docs/README.md) links the architecture, deployment, company research and demo verification guides. Original documents, the presentation PDF and historical reports are preserved in [docs/archive/](docs/archive/README.md).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to propose changes. Please report security issues privately as described in [SECURITY.md](SECURITY.md).
+
+## License
+
+CaseProof is released under the [Apache License 2.0](LICENSE).

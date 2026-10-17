@@ -17,7 +17,6 @@
 
 # Local development tools and original backup
 /services/backend/tests/
-/.github/
 /archive/
 /scripts/
 /evaluation/*
