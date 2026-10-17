@@ -1,0 +1,127 @@
+# Rebuild images and roll Cloud Run. Env vars stay in place
+# (`gcloud run services update --image` only).
+# Create a Cloud Build trigger in your own project. Do not commit
+# project IDs, tokens or webhook secrets.
+timeout: 3600s
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+  diskSizeGb: 64
+
+substitutions:
+  _REGION: us-central1
+  _REPO: caseproof
+  _TAG: latest
+
+steps:
+  - id: build-backend
+    name: gcr.io/cloud-builders/docker
+    waitFor: ["-"]
+    args:
+      - build
+      - --platform=linux/amd64
+      - -f
+      - services/backend/Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$_TAG
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:latest
+      - .
+
+  - id: build-web
+    name: gcr.io/cloud-builders/docker
+    waitFor: ["-"]
+    args:
+      - build
+      - --platform=linux/amd64
+      - -f
+      - apps/web/Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$_TAG
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:latest
+      - .
+
+  - id: push-backend
+    name: gcr.io/cloud-builders/docker
+    waitFor: [build-backend]
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend
+
+  - id: push-web
+    name: gcr.io/cloud-builders/docker
+    waitFor: [build-web]
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web
+
+  - id: migrate
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    waitFor: [push-backend]
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        IMG="${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$_TAG"
+        gcloud run jobs update caseproof-migrate --project="$PROJECT_ID" --region="${_REGION}" --image="$$IMG"
+        gcloud run jobs execute caseproof-migrate --project="$PROJECT_ID" --region="${_REGION}" --wait
+
+  - id: deploy-api
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    waitFor: [migrate]
+    args:
+      - gcloud
+      - run
+      - services
+      - update
+      - caseproof-api
+      - --project=$PROJECT_ID
+      - --region=${_REGION}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$_TAG
+
+  - id: deploy-worker
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    waitFor: [migrate]
+    args:
+      - gcloud
+      - run
+      - services
+      - update
+      - caseproof-worker
+      - --project=$PROJECT_ID
+      - --region=${_REGION}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$_TAG
+
+  - id: deploy-web
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    waitFor: [push-web]
+    args:
+      - gcloud
+      - run
+      - services
+      - update
+      - caseproof-web
+      - --project=$PROJECT_ID
+      - --region=${_REGION}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$_TAG
+
+  - id: wire-urls
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    waitFor: [deploy-api, deploy-worker, deploy-web]
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
+        WEB_HASHED="$(gcloud run services describe caseproof-web --project="$PROJECT_ID" --region="${_REGION}" --format='value(status.url)')"
+        WEB_REGIONAL="https://caseproof-web-$${NUMBER}.${_REGION}.run.app"
+        WORKER="$(gcloud run services describe caseproof-worker --project="$PROJECT_ID" --region="${_REGION}" --format='value(status.url)')"
+        gcloud run services update caseproof-api --project="$PROJECT_ID" --region="${_REGION}" \
+          --update-env-vars="^|^CASEPROOF_ALLOWED_ORIGINS=$${WEB_REGIONAL},$${WEB_HASHED}|CASEPROOF_WORKER_URL=$${WORKER}"
+        gcloud run services update caseproof-worker --project="$PROJECT_ID" --region="${_REGION}" \
+          --update-env-vars="CASEPROOF_WORKER_URL=$${WORKER}"

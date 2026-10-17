@@ -128,20 +128,11 @@ Uploaded documents are reviewed with Gemini using source citations and exact cal
 
 ## Deploy to Google Cloud
 
-Follow the [complete deployment guide](docs/DEPLOYMENT.md) in order. It includes the commands, configuration values and account setup for each step:
+The [Terraform bundle](infra/gcp/terraform/README.md) is the supported path. Copy `terraform.tfvars.example` to `terraform.tfvars`, set your project ID, put an access code in `.env`, then run `./infra/gcp/terraform/apply.sh`. That guide also covers scale, pause, reseeding and teardown.
 
-1. [Configure the project and service accounts](docs/DEPLOYMENT.md#1-prepare-the-project).
-2. [Create storage, the task queue and PostgreSQL roles](docs/DEPLOYMENT.md#2-create-storage-the-task-queue-and-database).
-3. [Store connection secrets and grant runtime permissions](docs/DEPLOYMENT.md#3-store-secrets-and-grant-runtime-permissions).
-4. [Build and publish both container images](docs/DEPLOYMENT.md#4-build-and-publish-the-images).
-5. [Run migrations and create application memberships](docs/DEPLOYMENT.md#5-run-migrations-and-seed-memberships).
-6. [Deploy the private worker and API](docs/DEPLOYMENT.md#6-deploy-the-worker-and-api).
-7. [Deploy the web service and configure access-code sign-in](docs/DEPLOYMENT.md#7-deploy-the-web-service-and-enable-sign-in).
-8. [Schedule reconciliation and verify the hosted workflow](docs/DEPLOYMENT.md#8-start-reconciliation-and-verify-the-app).
+A [step-by-step gcloud guide](docs/DEPLOYMENT.md) is available if you prefer to create each resource yourself.
 
-Cloud Run hosts the three services; Cloud SQL and a private Cloud Storage bucket persist data. Cloud Tasks and Cloud Scheduler replace the local dispatcher. Hosted demo users enter an access code, then use the same Alex, Sam and Aisha accounts. Store the code in Secret Manager and bind it to `CASEPROOF_DEMO_ACCESS_CODE` on the API, with `CASEPROOF_DEV_IDENTITY=true`. The worker keeps development identities off. The private API still requires the web service’s Cloud Run identity token.
-
-The local startup path has been verified. The cloud guide is based on the included adapters and current Google Cloud commands; a hosted end-to-end deployment has not yet been verified.
+Cloud Run hosts the three services; Cloud SQL and a private Cloud Storage bucket persist data. Cloud Tasks and Cloud Scheduler replace the local dispatcher. Hosted users enter an access code, then use the same Alex, Sam and Aisha accounts. The API and worker stay private.
 
 ## Troubleshooting
 

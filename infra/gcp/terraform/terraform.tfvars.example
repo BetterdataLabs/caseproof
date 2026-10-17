@@ -1,0 +1,27 @@
+# Copy to terraform.tfvars in this directory. terraform.tfvars is gitignored.
+# Do not put access codes, billing IDs, or live hostnames in git.
+
+project_id  = "your-gcp-project-id"
+region      = "us-central1"
+environment = "demo"
+
+# Leave false unless you want Terraform to create the GCP project.
+# create_project = true
+# billing_account = "XXXXXX-XXXXXX-XXXXXX"
+# quota_project   = "an-existing-project-for-api-quota"
+
+# Optional monthly email alert. This does not cap spend.
+# enable_budget   = true
+# billing_account = "XXXXXX-XXXXXX-XXXXXX"
+# budget_amount   = 100
+# budget_currency = "USD"
+
+# Optional pause schedule (Cloud SQL NEVER + Cloud Run max 0). Empty = none.
+# stop_cron     = "0 0 1 1 *"
+# stop_timezone = "Etc/UTC"
+
+# release = "v1"
+# cloud_run_min_instances = 0
+# cloud_run_max_instances = 2
+# sql_tier = "db-f1-micro"
+# model_name = "gemini-3.8-flash"

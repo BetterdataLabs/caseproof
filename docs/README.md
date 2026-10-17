@@ -6,7 +6,8 @@ For editing the source with live reload, use the [development guide](DEVELOPMENT
 
 | Guide                                                   | Contents                                                                                     |
 | ------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| [Google Cloud deployment](DEPLOYMENT.md)                | Infrastructure, database, container builds, identities, deployment commands and verification |
+| [Terraform on Google Cloud](../infra/gcp/terraform/README.md) | Configure, apply, scale, maintain and destroy a Cloud Run stack |
+| [Manual Google Cloud deployment](DEPLOYMENT.md)         | Same architecture as individual `gcloud` commands |
 | [Architecture](ARCHITECTURE.md)                         | Services, evidence handling, permissions, policy rules and execution limits                  |
 | [Company credit research](CREDIT_RESEARCH.md)           | Optional public-source research, citations, interpretation and model configuration           |
 | [Demo verification and evaluation](TESTING.md)          | Interactive checks, saved results and their scope                                            |

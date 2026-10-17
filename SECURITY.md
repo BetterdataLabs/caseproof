@@ -25,5 +25,6 @@ Operators must keep these values out of git:
 - `CASEPROOF_DEMO_ACCESS_CODE`
 - Database URLs and session secrets
 - Google Cloud credentials and service-account keys
+- `infra/gcp/terraform/terraform.tfvars` and any Terraform state file
 
 Use Secret Manager or an equivalent secret store in hosted environments. Rotate any value that may have been shared outside the operator team.

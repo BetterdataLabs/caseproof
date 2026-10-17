@@ -52,6 +52,11 @@ coverage/
 /apps/web/AGENTS.md
 /apps/web/CLAUDE.md
 
+# Terraform operator files (state already lives under /.data/)
+*.tfvars
+!*.tfvars.example
+**/.terraform/
+
 # Local editor and operating system files
 .DS_Store
 Thumbs.db

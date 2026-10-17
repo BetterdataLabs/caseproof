@@ -30,7 +30,8 @@ Use the demo accounts from the README after the access-code gate. If you add or 
 ## What not to include
 
 - Real access codes, API keys, tokens, or credential files
-- Private Cloud Run URLs, billing account IDs, or customer data
+- Private Cloud Run URLs, billing account IDs, project IDs, or customer data
+- `terraform.tfvars` or Terraform state
 - Generated runtime data under `.data/`
 - Large unrelated refactors in the same pull request as a bug fix
 

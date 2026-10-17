@@ -1,5 +1,7 @@
 # Google Cloud deployment
 
+Prefer the [Terraform bundle](../infra/gcp/terraform/README.md) for a one-command deploy, plus scale, pause and destroy. This page is the same architecture as individual `gcloud` commands.
+
 This guide deploys CaseProof to Cloud Run with Cloud SQL, Cloud Storage and Cloud Tasks. The public web uses an access-code gate; the API and worker stay private. Run the steps in order from the repository root using Bash. For local startup, use the [README](../README.md#run-locally).
 
 The local app and container builds have been verified. A hosted end-to-end deployment has not yet been verified; complete step 8 before sharing a hosted demo.
