@@ -11,7 +11,6 @@ COPY services/backend/migrations ./migrations
 COPY services/backend/alembic.ini ./
 COPY policies /app/policies
 COPY evaluation/results/latest.json /app/evaluation/results/latest.json
-COPY evaluation/results/MODEL_CARD.md /app/evaluation/results/MODEL_CARD.md
 RUN uv sync --frozen --no-dev && useradd --uid 10001 --create-home caseproof
 USER caseproof
 ENV PATH="/app/services/backend/.venv/bin:$PATH" CASEPROOF_ENVIRONMENT=cloud CASEPROOF_DEV_IDENTITY=false

@@ -156,38 +156,41 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </div>
       <div className="border-t border-white/10 p-3">
-        <div className="flex items-center gap-2.5 px-2 py-2">
-          <Avatar name={session.user.name} size={32} tone="teal" />
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[13px] font-semibold text-white">
-              {session.user.name}
-            </span>
-            <span className="block truncate text-[11.5px] text-white/55">
-              {session.workspace === "viewer"
-                ? "Viewer · read-only access"
-                : session.roles.map((r) => r.replace(/_/g, " ")).join(" · ")}
-            </span>
-          </span>
-        </div>
-        <div className="mt-1 space-y-0.5">
-          {session.dev_identity && (
-            <button
-              type="button"
-              onClick={() => router.push("/login?pick=1")}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[13px] font-semibold text-white/80 hover:bg-white/10"
-            >
-              Switch persona
+        <Menu
+          align="start"
+          trigger={
+            <button className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left hover:bg-white/[0.06]">
+              <Avatar name={session.user.name} size={32} tone="teal" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-semibold text-white">
+                  {session.user.name}
+                </span>
+                <span className="block truncate text-[11.5px] text-white/55">
+                  {session.workspace === "viewer"
+                    ? "Viewer · read-only access"
+                    : session.roles.map((r) => r.replace(/_/g, " ")).join(" · ")}
+                </span>
+              </span>
+              <ChevronsUpDown className="size-4 text-white/50" aria-hidden />
             </button>
-          )}
-          <button
-            type="button"
-            onClick={signOut}
-            className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[13px] font-semibold text-white/80 hover:bg-white/10"
-          >
-            <LogOut className="size-4" aria-hidden />
-            Sign out
-          </button>
-        </div>
+          }
+          items={[
+            ...(session.dev_identity
+              ? [
+                  {
+                    label: "Switch persona",
+                    onSelect: () => router.push("/login?pick=1"),
+                    icon: <Avatar name="↔" size={18} />,
+                  },
+                ]
+              : []),
+            {
+              label: "Sign out",
+              onSelect: signOut,
+              icon: <LogOut className="size-4" aria-hidden />,
+            },
+          ]}
+        />
       </div>
     </div>
   );
@@ -206,26 +209,6 @@ function ShellFallback() {
         <Skeleton className="h-96 w-full" />
       </div>
     </div>
-  );
-}
-
-function MobileSignOut() {
-  const qc = useQueryClient();
-  const router = useRouter();
-  async function signOut() {
-    await post("/v1/session/logout", {});
-    qc.clear();
-    router.push("/login");
-  }
-  return (
-    <button
-      type="button"
-      onClick={signOut}
-      className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-ink hover:bg-teal-50"
-    >
-      <LogOut className="size-4" aria-hidden />
-      Sign out
-    </button>
   );
 }
 
@@ -288,7 +271,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <MenuIcon className="size-5" />
             </button>
             <Brand inverted={false} />
-            <MobileSignOut />
           </div>
           <main id="main" className="min-w-0 flex-1">
             <ViewerNotice />

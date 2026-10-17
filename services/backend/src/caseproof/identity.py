@@ -3,7 +3,7 @@
 Compose and Cloud use the same access code. It sets an HttpOnly cookie, then the seeded personas sign in.
 The code is compared in constant time and is never accepted from a query string. Identity-Aware Proxy still
 works when a verified assertion is present and development identities are off.
-Development identities do not start until that code is set, on Compose and on Cloud.
+Hosted development identities require a code; local loopback sign-in can run without one.
 A plain email or organisation header is never trusted.
 """
 

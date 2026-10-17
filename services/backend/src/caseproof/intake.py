@@ -168,21 +168,9 @@ def create_uploaded_case(
     )
     session.add(case)
     session.flush()
-    from .checks import DUPLICATE_INVOICE_KEY, DUPLICATE_INVOICE_LABEL
-
-    keys = {req["key"] for req in policy.definition["requirements"]}
     for req in policy.definition["requirements"]:
         session.add(
             Question(org_id=case.org_id, case_id=case.id, requirement_key=req["key"], label=req["label"])
-        )
-    if DUPLICATE_INVOICE_KEY not in keys:
-        session.add(
-            Question(
-                org_id=case.org_id,
-                case_id=case.id,
-                requirement_key=DUPLICATE_INVOICE_KEY,
-                label=DUPLICATE_INVOICE_LABEL,
-            )
         )
     record(
         session,

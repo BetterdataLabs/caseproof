@@ -86,24 +86,6 @@ export default function VendorCasePage() {
               .
             </p>
           )}
-          {detail.client_export?.available && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              <a
-                href={`/api/v1/vendor/cases/${c.id}/export/pdf`}
-                className="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-teal-300 bg-white px-3 text-[13px] font-semibold text-teal-900 hover:bg-teal-100"
-              >
-                <Download className="size-3.5" aria-hidden />
-                Review notice (PDF)
-              </a>
-              <a
-                href={`/api/v1/vendor/cases/${c.id}/export/json`}
-                className="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-teal-300 bg-white px-3 text-[13px] font-semibold text-teal-900 hover:bg-teal-100"
-              >
-                <FileText className="size-3.5" aria-hidden />
-                Review notice (JSON)
-              </a>
-            </div>
-          )}
         </div>
       </div>
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">

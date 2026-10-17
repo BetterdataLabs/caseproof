@@ -42,7 +42,6 @@ from ..db import global_session, org_session
 from ..document_checks import configure_checks
 from ..document_content import EXTENSIONS, identify_format, image_preview
 from ..errors import Conflict, DomainError, Forbidden, NotFound, StaleRevision, Throttled, Unsupported
-from ..exports import client_artifact
 from ..history import bump, lock_case, record, utcnow
 from ..identity import (
     DEMO_COOKIE,
@@ -308,19 +307,6 @@ def _set_session_cookie(response: Response, data: SessionData) -> None:
     )
 
 
-def _persona_home(subject: str, org_id: uuid.UUID) -> str:
-    from ..seed import showcase_ids
-
-    showcase = showcase_ids(org_id)
-    if subject == "dev:vendor" and showcase["completed_case_id"]:
-        return f"/vendor/{showcase['completed_case_id']}"
-    if subject == "dev:vendor":
-        return "/vendor"
-    if showcase["reading_case_id"]:
-        return f"/cases/{showcase['reading_case_id']}"
-    return "/queue"
-
-
 @app.get("/v1/demo/gate")
 def demo_gate(request: Request) -> dict[str, Any]:
     required = demo_gate_required()
@@ -401,7 +387,7 @@ def dev_login(body: LoginIn, request: Request, response: Response) -> dict[str, 
     org = memberships[0][1]
     data = new_session(body.subject, str(org.id))
     _set_session_cookie(response, data)
-    return {"ok": True, "home": _persona_home(body.subject, org.id)}
+    return {"ok": True, "home": "/vendor" if body.subject == "dev:vendor" else "/queue"}
 
 
 @app.post("/v1/session/logout")
@@ -426,15 +412,19 @@ def switch_org(
         raise Forbidden("NO_MEMBERSHIP", "You are not a member of that organisation.")
     data = SessionData(ctx.session.subject, ctx.session.sid, body.org_id)
     response.set_cookie(
-        SESSION_COOKIE, sign_session(data), max_age=SESSION_MAX_AGE, httponly=True, samesite="lax", path="/"
+        SESSION_COOKIE,
+        sign_session(data),
+        max_age=SESSION_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=settings.environment == "cloud",
+        path="/",
     )
     return {"ok": True}
 
 
 @app.get("/v1/session")
 def get_session(request: Request, response: Response, ctx: Ctx = Depends(current)) -> dict[str, Any]:
-    from ..seed import showcase_ids
-
     session = ctx.session
     if session is None:  # hosted identity without a bound session yet: bind CSRF to a new session id
         session = new_session(ctx.user.subject, str(ctx.actor.org_id))
@@ -469,7 +459,6 @@ def get_session(request: Request, response: Response, ctx: Ctx = Depends(current
         "environment": settings.environment,
         "demo_mode": settings.demo_mode,
         "dev_identity": settings.dev_identity,
-        "showcase": showcase_ids(ctx.actor.org_id),
         "model": {
             "name": settings.model_name,
             "location": settings.model_location,
@@ -1153,34 +1142,6 @@ def vendor_original(case_id: str, version_id: str, ctx: Ctx = Depends(current)) 
     return original(case_id, version_id, ctx)
 
 
-@app.get("/v1/vendor/cases/{case_id}/export/{fmt}")
-def vendor_export(case_id: str, fmt: Literal["pdf", "json"], ctx: Ctx = Depends(current)) -> Response:
-    with org_session(ctx.actor.org_id) as session:
-        case = load_case(session, case_id)
-        vendor.require_access(case, ctx.actor)
-        export = session.get(Export, case.current_export_id) if case.current_export_id else None
-        if export is None or export.state != "ready" or not export.pdf_key:
-            raise Conflict("EXPORT_NOT_READY", "A client review notice is not available yet.")
-        ref = export.export_ref
-        record(
-            session,
-            case,
-            "ExportDownloaded",
-            ctx.actor,
-            f"{ctx.actor.name} downloaded {ref} (client pack, {fmt}, current)",
-        )
-        data = client_artifact(export, fmt)
-    return Response(
-        content=data,
-        media_type="application/pdf" if fmt == "pdf" else "application/json",
-        headers={
-            "Content-Disposition": f'attachment; filename="{ref}.client.{fmt}"',
-            "X-Export-Status": "current",
-            "X-Export-Audience": "submitting_party",
-        },
-    )
-
-
 class AutomationIn(BaseModel):
     action: Literal["pause", "resume", "set_mode"]
     mode: Literal["off", "shadow", "autonomous"] | None = None
@@ -1364,13 +1325,7 @@ def assign(case_id: str, body: AssignIn, cmd: tuple[Ctx, str] = Depends(command)
 
 
 @app.get("/v1/exports/{export_id}/{fmt}")
-def download_export(
-    export_id: str,
-    fmt: Literal["pdf", "json", "client-pdf", "client-json"],
-    ctx: Ctx = Depends(current),
-) -> Response:
-    client = fmt.startswith("client-")
-    kind = "client-pdf" if client and fmt.endswith("pdf") else "client-json" if client else fmt
+def download_export(export_id: str, fmt: Literal["pdf", "json"], ctx: Ctx = Depends(current)) -> Response:
     with org_session(ctx.actor.org_id) as session:
         try:
             export = session.get(Export, uuid.UUID(export_id))
@@ -1380,33 +1335,26 @@ def download_export(
             raise NotFound("EXPORT_NOT_FOUND", "Export not found.")
         if export.state not in ("ready", "superseded") or not export.pdf_key:
             raise Conflict("EXPORT_NOT_READY", f"The summary is {export.state}.")
+        key = export.pdf_key if fmt == "pdf" else export.json_key
         case = session.get(Case, export.case_id)
         current_flag = (
             "current" if case.current_export_id == export.id and export.state == "ready" else "superseded"
         )
         ref = export.export_ref
-        pack = "client pack" if client else "review summary"
         record(
             session,
             case,
             "ExportDownloaded",
             ctx.actor,
-            f"{ctx.actor.name} downloaded {ref} ({pack}, {kind}, {current_flag})",
+            f"{ctx.actor.name} downloaded {ref} ({fmt}, {current_flag})",
         )
-        if client:
-            data = client_artifact(export, "pdf" if kind == "client-pdf" else "json")
-        else:
-            data = object_store().get(export.pdf_key if fmt == "pdf" else export.json_key)
-    filename = (
-        f"{ref}.client.pdf" if kind == "client-pdf" else f"{ref}.client.json" if client else f"{ref}.{fmt}"
-    )
+    data = object_store().get(key)
     return Response(
         content=data,
-        media_type="application/pdf" if kind.endswith("pdf") else "application/json",
+        media_type="application/pdf" if fmt == "pdf" else "application/json",
         headers={
-            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Disposition": f'attachment; filename="{ref}.{fmt}"',
             "X-Export-Status": current_flag,
-            "X-Export-Audience": "submitting_party" if client else "bank",
         },
     )
 
@@ -1768,10 +1716,7 @@ def controls(body: ControlsIn, cmd: tuple[Ctx, str] = Depends(command)) -> JSONR
 def evaluation(ctx: Ctx = Depends(current)) -> dict[str, Any]:
     from ..config import APP_ROOT
 
-    results = APP_ROOT / "evaluation" / "results"
-    path = results / "latest.json"
-    card = results / "MODEL_CARD.md"
-    model_card = card.read_text() if card.exists() else None
+    path = APP_ROOT / "evaluation" / "results" / "latest.json"
     if not path.exists():
-        return {"available": False, "model_card": model_card}
-    return {"available": True, "report": json.loads(path.read_text()), "model_card": model_card}
+        return {"available": False}
+    return {"available": True, "report": json.loads(path.read_text())}

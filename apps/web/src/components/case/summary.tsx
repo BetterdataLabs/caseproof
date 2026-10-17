@@ -37,9 +37,7 @@ export function SummaryPanel({ detail }: { detail: CaseDetail }) {
     <div className="space-y-3 py-4">
       <Callout tone="neutral">
         Each summary is immutable and tied to a case revision. A later change marks it superseded; a
-        downloaded file cannot be recalled, so its export ID makes its age explicit. PDF and JSON
-        are the bank record. The client pack is what the submitting party may see: no reviewer
-        names, no staff notes, no model traces, and no credit-research brief.
+        downloaded file cannot be recalled, so its export ID makes its age explicit.
       </Callout>
       <ul className="space-y-2">
         {detail.exports.map((e) => (
@@ -88,18 +86,6 @@ export function SummaryPanel({ detail }: { detail: CaseDetail }) {
                       className="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-line bg-white px-3 text-[13px] font-semibold text-ink hover:border-teal-300 hover:bg-teal-50"
                     >
                       <FileJson className="size-3.5" aria-hidden /> JSON
-                    </a>
-                    <a
-                      href={`/api/v1/exports/${e.id}/client-pdf`}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-line bg-white px-3 text-[13px] font-semibold text-ink hover:border-teal-300 hover:bg-teal-50"
-                    >
-                      <Download className="size-3.5" aria-hidden /> Client PDF
-                    </a>
-                    <a
-                      href={`/api/v1/exports/${e.id}/client-json`}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-line bg-white px-3 text-[13px] font-semibold text-ink hover:border-teal-300 hover:bg-teal-50"
-                    >
-                      <FileJson className="size-3.5" aria-hidden /> Client JSON
                     </a>
                   </>
                 )}

@@ -7,7 +7,6 @@ import {
   Clock3,
   PackageCheck,
   FileCheck2,
-  Copy,
   UserRound,
   XCircle,
 } from "lucide-react";
@@ -28,7 +27,7 @@ export function Checklist({
     <Card>
       <CardHeader
         title="Checklist"
-        description={`Checks and review criteria from policy v${detail.case.policy.version}, with the supporting values and source quotations.`}
+        description={`Checks and review criteria from policy v${detail.case.policy.version}. Open the evidence to inspect each finding.`}
         actions={
           <span className="text-[13px] font-semibold text-muted tabular">
             {resolved} of {detail.questions.length} resolved
@@ -85,8 +84,6 @@ function QuestionRow({
               <Calculator className="size-4" aria-hidden />
             ) : q.key === "delivery_receipts" ? (
               <PackageCheck className="size-4" aria-hidden />
-            ) : q.key === "duplicate_invoice" ? (
-              <Copy className="size-4" aria-hidden />
             ) : (
               <FileCheck2 className="size-4" aria-hidden />
             )}
@@ -109,7 +106,6 @@ function QuestionRow({
       </div>
       <div className="ml-11 mt-3 space-y-3">
         <QuestionVisual q={q} />
-        <SourceQuotes q={q} detail={detail} onSource={onSource} />
         <p className="text-[13.5px] leading-relaxed text-ink/90">{q.detail}</p>
         {Boolean(q.metrics.policy_assessment) && <PolicyEvidence q={q} onSource={onSource} />}
         <div className="flex flex-wrap items-center gap-1.5 text-[12px]">
@@ -150,70 +146,6 @@ function QuestionRow({
         ))}
       </div>
     </li>
-  );
-}
-
-const QUOTE_FIELDS: Record<string, { role: string; fields: string[] }> = {
-  invoice_total: { role: "invoice", fields: ["total_amount", "quantity", "unit_price"] },
-  delivery_receipts: { role: "delivery_receipt", fields: ["quantity", "delivery_ref"] },
-  duplicate_invoice: { role: "invoice", fields: ["invoice_number", "total_amount"] },
-};
-
-const FACT_LABEL: Record<string, string> = {
-  total_amount: "Total",
-  quantity: "Quantity",
-  unit_price: "Unit price",
-  delivery_ref: "Delivery",
-  invoice_number: "Invoice number",
-};
-
-function SourceQuotes({
-  q,
-  detail,
-  onSource,
-}: {
-  q: Question;
-  detail: CaseDetail;
-  onSource: (label: string) => void;
-}) {
-  const spec = QUOTE_FIELDS[q.key];
-  if (!spec) return null;
-  const hits = detail.documents
-    .filter((doc) => doc.role === spec.role)
-    .flatMap((doc) => {
-      const version = doc.versions.find((v) => v.is_active);
-      if (!version) return [];
-      return spec.fields.flatMap((field) => {
-        const fact = version.facts.find((item) => item.field === field && item.quote);
-        return fact ? [{ fact, label: version.label }] : [];
-      });
-    })
-    .slice(0, 3);
-  if (!hits.length) return null;
-  return (
-    <ul className="space-y-2">
-      {hits.map(({ fact, label }) => (
-        <li
-          key={`${label}-${fact.field}`}
-          className="rounded-lg border border-teal-200 bg-teal-50/60 px-3 py-2"
-        >
-          <p className="text-[12px] font-semibold text-teal-800">
-            {FACT_LABEL[fact.field] ?? fact.field} · {fact.value}
-            <button
-              type="button"
-              onClick={() => onSource(label)}
-              className="ml-2 underline decoration-teal-300 underline-offset-2"
-            >
-              {label}
-            </button>
-            <span className="font-normal text-muted"> · page {fact.page}</span>
-          </p>
-          <blockquote className="mt-1 text-[13.5px] leading-relaxed text-ink">
-            “{fact.quote}”
-          </blockquote>
-        </li>
-      ))}
-    </ul>
   );
 }
 
@@ -314,17 +246,6 @@ function QuestionVisual({ q }: { q: Question }) {
     | number
     | { delivery_ref: string; quantity: string; receipts: string[]; received_at: string }[]
   >;
-  if (q.key === "duplicate_invoice" && Array.isArray(m.peer_cases) && m.peer_cases.length > 0) {
-    return (
-      <div className="rounded-xl border border-line bg-[#fafbfa] px-4 py-3 text-[13.5px]">
-        <p className="font-semibold text-ink">Already on {m.peer_cases.join(", ")}</p>
-        <p className="mt-1 text-[12.5px] text-muted">
-          Same seller, invoice number and amount. This case stays on hold. It does not approve or
-          refuse financing.
-        </p>
-      </div>
-    );
-  }
   if (q.key === "invoice_total" && m.expected_total !== undefined) {
     const ok = m.stated_total === m.expected_total;
     return (

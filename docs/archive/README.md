@@ -1,6 +1,6 @@
 # Historical documents and artifacts
 
-The original repository documents are preserved in [original-repository/](original-repository/README.md), including their directory structure and contents. They describe an earlier, larger product and **must not** be used as the judge script. Use the [current README](../../README.md), [architecture](../ARCHITECTURE.md), and [3-minute judge path](../JUDGE_SCRIPT.md).
+The original repository documents are preserved in [original-repository/](original-repository/README.md), including their directory structure and contents. Use the [current README](../../README.md) and [deployment guide](../DEPLOYMENT.md) for setup.
 
 | Material                                                  | Location                                                                                      |
 | --------------------------------------------------------- | --------------------------------------------------------------------------------------------- |

@@ -8,7 +8,7 @@ import json
 from sqlalchemy import select
 
 from .catalog import sample_policy
-from .checks import DUPLICATE_INVOICE_KEY, CheckResult
+from .checks import CheckResult
 from .history import record
 from .models import DocumentVersion, HumanTask, MaterialClaim, PolicyVersion
 from .review_defaults import LEGACY_DELIVERY_CRITERIA, LEGACY_INVOICE_CRITERIA, current_requirements
@@ -18,17 +18,14 @@ REVIEW_DECISIONS = ["accept_policy_review", "authorise_request", "keep_on_hold"]
 
 def model_requirements(definition: dict, *, all_requirements: bool = False) -> list[dict]:
     if all_requirements:
-        return [rule for rule in current_requirements(definition) if rule["key"] != DUPLICATE_INVOICE_KEY]
+        return current_requirements(definition)
     core = {r["key"]: r for r in sample_policy()["requirements"]}
     return [
         r
         for r in definition["requirements"]
-        if r["key"] != DUPLICATE_INVOICE_KEY
-        and (
-            r["key"] not in core
-            or r["description"]
-            not in {core[r["key"]]["description"], LEGACY_INVOICE_CRITERIA, LEGACY_DELIVERY_CRITERIA}
-        )
+        if r["key"] not in core
+        or r["description"]
+        not in {core[r["key"]]["description"], LEGACY_INVOICE_CRITERIA, LEGACY_DELIVERY_CRITERIA}
     ]
 
 

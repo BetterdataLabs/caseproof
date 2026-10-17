@@ -223,7 +223,7 @@ export function LoginView() {
           </div>
           {!needsCode && (
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-700">
-              {opening ? "Opening the case" : "Choose your workspace"}
+              {opening ? "Opening your workspace" : "Choose your workspace"}
             </p>
           )}
           <h2
@@ -236,7 +236,7 @@ export function LoginView() {
             {needsCode
               ? "Enter your code. You'll find it on the submission."
               : opening
-                ? "The quote and checklist are already on the case."
+                ? "Signing you in to the bank workspace."
                 : "Three personas, one connected review. Choose what you want to do."}
           </p>
           {params.get("revoked") && (

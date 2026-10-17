@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import argparse
 import shutil
-import uuid
 
 from sqlalchemy import select, text
 
@@ -17,17 +16,7 @@ from .catalog import sample_policy
 from .config import get_settings
 from .db import global_session, org_session, owner_engine
 from .history import utcnow
-from .models import (
-    ORG_SCOPED_TABLES,
-    Case,
-    Export,
-    Job,
-    Membership,
-    Organisation,
-    OrgControl,
-    PolicyVersion,
-    User,
-)
+from .models import ORG_SCOPED_TABLES, Membership, Organisation, OrgControl, PolicyVersion, User
 
 ORGS = [
     {
@@ -161,147 +150,6 @@ def seed_identities() -> dict[str, Organisation]:
     return orgs
 
 
-READING_SCENARIO = "two-gaps"
-COMPLETED_SCENARIO = "clean-case"
-
-
-def showcase_ids(org_id: uuid.UUID) -> dict[str, str | None]:
-    """The in-progress case a judge lands on, and the completed case with a client notice."""
-    with org_session(org_id) as session:
-        vendor_id = select(User.id).where(User.subject == "dev:vendor").scalar_subquery()
-        reading = (
-            session.execute(
-                select(Case)
-                .where(
-                    Case.scenario_key == READING_SCENARIO,
-                    Case.lifecycle == "open",
-                    Case.vendor_contact_id == vendor_id,
-                )
-                .order_by(Case.created_at)
-            )
-            .scalars()
-            .first()
-        )
-        completed = (
-            session.execute(
-                select(Case)
-                .where(
-                    Case.scenario_key == COMPLETED_SCENARIO,
-                    Case.lifecycle == "complete",
-                    Case.vendor_contact_id == vendor_id,
-                )
-                .order_by(Case.created_at)
-            )
-            .scalars()
-            .first()
-        )
-        return {
-            "reading_case_id": str(reading.id) if reading else None,
-            "completed_case_id": str(completed.id) if completed else None,
-        }
-
-
-def seed_showcase(orgs: dict[str, Organisation]) -> list[str]:
-    """One open case with quotes and a checklist, and one completed case with a client notice.
-
-    Neither waits on Vertex. Only an empty workspace receives these examples;
-    initialization never changes existing case evidence, contacts or decisions.
-    """
-    from .casework import create_case, try_complete
-    from .exports import render_export
-
-    org = orgs["straits"]
-    lines: list[str] = []
-    with global_session(owner_engine()) as session:
-        users = {u.subject: u for u in session.execute(select(User)).scalars()}
-    alex = users["dev:alex"]
-    vendor = users["dev:vendor"]
-    actor = Actor(
-        "person",
-        f"user:{alex.id}",
-        alex.display_name,
-        org.id,
-        frozenset({"reviewer", "supervisor", "simulation_operator", "environment_admin"}),
-        alex.id,
-    )
-    with org_session(org.id, owner_engine()) as session:
-        if session.scalar(select(Case.id).limit(1)) is not None:
-            return []
-        policy = (
-            session.execute(
-                select(PolicyVersion).where(
-                    PolicyVersion.org_id == org.id, PolicyVersion.status == "published"
-                )
-            )
-            .scalars()
-            .first()
-        )
-        if policy is None:
-            raise RuntimeError("Showcase seed requires the published sample policy.")
-        reading = (
-            session.execute(
-                select(Case).where(Case.scenario_key == READING_SCENARIO).order_by(Case.created_at)
-            )
-            .scalars()
-            .first()
-        )
-        if reading is None:
-            reading = create_case(
-                session,
-                actor,
-                policy=policy,
-                scenario_key=READING_SCENARIO,
-                assigned_to=alex.id,
-                automation_mode="autonomous",
-            )
-            reading.vendor_contact_id = vendor.id
-            reading.next_action = (
-                "Checklist is ready: the invoice total and the delivery still need attention."
-            )
-            lines.append(f"straits:{reading.reference}:{READING_SCENARIO}")
-        elif reading.vendor_contact_id is None:
-            reading.vendor_contact_id = vendor.id
-        completed = (
-            session.execute(
-                select(Case).where(Case.scenario_key == COMPLETED_SCENARIO).order_by(Case.created_at)
-            )
-            .scalars()
-            .first()
-        )
-        if completed is None:
-            completed = create_case(
-                session,
-                actor,
-                policy=policy,
-                scenario_key=COMPLETED_SCENARIO,
-                assigned_to=alex.id,
-                automation_mode="autonomous",
-            )
-            completed.vendor_contact_id = vendor.id
-            lines.append(f"straits:{completed.reference}:{COMPLETED_SCENARIO}")
-        elif completed.vendor_contact_id is None:
-            completed.vendor_contact_id = vendor.id
-        if completed.lifecycle != "complete":
-            ok, blockers, export = try_complete(session, completed, actor)
-            if not ok or export is None:
-                detail = "; ".join(item["detail"] for item in blockers)
-                raise RuntimeError(f"Showcase case could not be completed: {detail}")
-            render_export(session, export)
-            for job in session.execute(
-                select(Job).where(Job.case_id == completed.id, Job.state == "queued")
-            ).scalars():
-                job.state = "done" if job.export_id == export.id else "cancelled"
-                job.finished_at = utcnow()
-                job.result = {"export_state": export.state, "rendered_during": "seed"}
-            lines.append(f"straits:{completed.reference}:client-notice:{export.export_ref}")
-        else:
-            export = session.get(Export, completed.current_export_id) if completed.current_export_id else None
-            if export is not None and export.state == "preparing":
-                render_export(session, export)
-                lines.append(f"straits:{completed.reference}:client-notice:{export.export_ref}")
-    return lines
-
-
 def seed_demo_cases(orgs: dict[str, Organisation]) -> list[str]:
     from .casework import create_case, settle_execution
     from .jobs import enqueue_agent
@@ -322,11 +170,6 @@ def seed_demo_cases(orgs: dict[str, Organisation]) -> list[str]:
         )
         for scenario_key, mode in cases:
             with org_session(org.id) as session:
-                if (
-                    session.execute(select(Case).where(Case.scenario_key == scenario_key)).scalars().first()
-                    is not None
-                ):
-                    continue
                 policy = (
                     session.execute(select(PolicyVersion).where(PolicyVersion.status == "published"))
                     .scalars()
@@ -363,8 +206,6 @@ def main() -> None:
         reset()
     orgs = seed_identities()
     print("organisations:", ", ".join(o.short_name for o in orgs.values()))
-    for line in seed_showcase(orgs):
-        print("showcase", line)
     for spec in args.iap_user:
         email, _, roles = spec.partition("=")
         with global_session(owner_engine()) as session:

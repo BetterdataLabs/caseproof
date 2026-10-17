@@ -1,9 +1,5 @@
 """Retained review summaries. Completion freezes the snapshot in its own transaction; the export worker
-renders exactly that snapshot (PDF and JSON describe the same frozen review), never the current documents.
-
-The client pack is a redacted projection of that same snapshot for the submitting party: no reviewer
-names, staff notes, model traces, or credit-research brief.
-"""
+renders exactly that snapshot (PDF and JSON describe the same frozen review), never the current documents."""
 
 from __future__ import annotations
 
@@ -12,7 +8,7 @@ import io
 import json
 import uuid
 from html import escape
-from typing import Any, Literal
+from typing import Any
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
@@ -220,86 +216,6 @@ def build_snapshot(session: Session, case: Case) -> dict[str, Any]:
         "boundary": "Bank credit decisions, formal sanctions screening, authenticity investigations, facility changes, financing approval and payments "
         "remain in the bank's existing process.",
     }
-
-
-CLIENT_NOTICE = (
-    "This notice is for the submitting party. It records the document-review outcome on this "
-    "invoice pack. It does not name bank staff, include model traces, or disclose the bank's "
-    "credit research. The financing decision remains with the bank."
-)
-
-
-def client_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
-    """What the submitting party may see: checklist outcome, their documents, and requests they already received."""
-    case = snapshot["case"]
-    policy = snapshot["policy"]
-    return {
-        "schema": "caseproof.client-summary/1",
-        "audience": "submitting_party",
-        "notice": CLIENT_NOTICE,
-        "case": {
-            "reference": case["reference"],
-            "title": case["title"],
-            "revision": case["revision"],
-            "invoice_reference": case["invoice_reference"],
-            "seller": case["seller"],
-            "buyer": case["buyer"],
-        },
-        "policy": {"name": policy["name"], "key": policy["key"], "version": policy["version"]},
-        "outcome": snapshot["outcome"],
-        "questions": [
-            {
-                "label": q["label"],
-                "state": q["state"],
-                "result": q["result"],
-                "reason_code": q["reason_code"],
-                "detail": (
-                    "This requirement was resolved during bank review."
-                    if (q.get("policy_assessment") or {}).get("disposition")
-                    else q["detail"].split(" Reviewer disposition:", 1)[0]
-                ),
-                "evidence": q["evidence"],
-            }
-            for q in snapshot["questions"]
-        ],
-        "sources": [
-            {
-                "label": s["label"],
-                "role": s["role"],
-                "version": s["version"],
-                "state": s["state"],
-                "active": s["active"],
-                "sha256": s["sha256"],
-                "received_via": s.get("received_via"),
-                "duplicate_of": s.get("duplicate_of"),
-                "received_at": s.get("received_at"),
-            }
-            for s in snapshot["sources"]
-        ],
-        "requests": snapshot.get("requests") or [],
-        "replies": [
-            {
-                "summary": r["summary"],
-                "received_at": r["received_at"],
-                "sources": r["sources"],
-            }
-            for r in snapshot.get("replies") or []
-        ],
-        "frozen_at": snapshot["frozen_at"],
-        "boundary": snapshot["boundary"],
-    }
-
-
-def client_artifact(export: Export, fmt: Literal["pdf", "json"]) -> bytes:
-    """Deterministic client pack from the frozen snapshot. No staff names or model traces."""
-    client = client_snapshot(export.snapshot)
-    if fmt == "pdf":
-        return render_client_pdf(export.export_ref, client)
-    return json.dumps(
-        {"export_id": str(export.id), "export_ref": export.export_ref, **client},
-        indent=2,
-        sort_keys=True,
-    ).encode()
 
 
 def render_pdf(export_ref: str, snapshot: dict[str, Any]) -> bytes:
@@ -600,144 +516,6 @@ def render_pdf(export_ref: str, snapshot: dict[str, Any]) -> bytes:
         canvas.setFont("Helvetica", 7)
         canvas.setFillColor(MUTED)
         canvas.drawString(18 * mm, 9 * mm, f"{export_ref} · revision {c['revision']} · document review")
-        canvas.drawRightString(A4[0] - 18 * mm, 9 * mm, f"Page {doc_.page}")
-        canvas.restoreState()
-
-    doc.build(story, onFirstPage=footer, onLaterPages=footer)
-    return buffer.getvalue()
-
-
-def render_client_pdf(export_ref: str, snapshot: dict[str, Any]) -> bytes:
-    """Shorter notice for the submitting party: outcome, checklist, sources, and the exchange they already saw."""
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        leftMargin=18 * mm,
-        rightMargin=18 * mm,
-        topMargin=16 * mm,
-        bottomMargin=16 * mm,
-        title=f"CaseProof client review notice {export_ref}",
-        author="CaseProof",
-        invariant=1,
-    )
-    styles = getSampleStyleSheet()
-    body = ParagraphStyle(
-        "body",
-        parent=styles["BodyText"],
-        fontName="Helvetica",
-        fontSize=9,
-        leading=12.5,
-        textColor=NAVY,
-        alignment=TA_LEFT,
-    )
-    small = ParagraphStyle("small", parent=body, fontSize=7.8, leading=10, textColor=MUTED)
-    h1 = ParagraphStyle("h1", parent=body, fontName="Helvetica-Bold", fontSize=17, leading=21)
-    h2 = ParagraphStyle(
-        "h2",
-        parent=body,
-        fontName="Helvetica-Bold",
-        fontSize=10.5,
-        leading=14,
-        textColor=TEAL,
-        spaceBefore=10,
-        spaceAfter=4,
-    )
-    c = snapshot["case"]
-    story: list[Any] = [
-        Paragraph("CaseProof · Client document-review notice", small),
-        Spacer(1, 4),
-        Paragraph(escape(f"{c['reference']} — {c['title']}"), h1),
-        Spacer(1, 4),
-        Paragraph(escape(snapshot["outcome"]), body),
-        Spacer(1, 4),
-        Paragraph(escape(snapshot["notice"]), small),
-        Spacer(1, 8),
-    ]
-    story.append(
-        _table(
-            [
-                ["Notice ID", export_ref, "Case revision", str(c["revision"])],
-                ["Seller", c["seller"], "Buyer", c["buyer"]],
-                ["Invoice", c["invoice_reference"], "Policy", snapshot["policy"]["name"]],
-                [
-                    "Frozen at",
-                    snapshot["frozen_at"][:19] + "Z",
-                    "Audience",
-                    "Submitting party",
-                ],
-            ],
-            [28 * mm, 58 * mm, 28 * mm, 60 * mm],
-            body,
-            header=False,
-        )
-    )
-    story.append(Paragraph("Checklist", h2))
-    rows = [["Requirement", "Result", "Evidence", "Basis"]]
-    for q in snapshot["questions"]:
-        rows.append(
-            [
-                Paragraph(escape(q["label"]), body),
-                q["state"].replace("_", " "),
-                ", ".join(q["evidence"]),
-                Paragraph(escape(q["detail"]), small),
-            ]
-        )
-    story.append(_table(rows, [48 * mm, 20 * mm, 22 * mm, 84 * mm], body))
-    story.append(Paragraph("Documents on this submission", h2))
-    rows = [["Source", "Role", "Version", "Status", "SHA-256 (prefix)"]]
-    for s in snapshot["sources"]:
-        status = (
-            s["state"]
-            + (" · active" if s["active"] else "")
-            + (f" · copy of {s['duplicate_of']}" if s["duplicate_of"] else "")
-        )
-        rows.append(
-            [
-                s["label"],
-                s["role"].replace("_", " "),
-                str(s["version"] or ""),
-                Paragraph(status, small),
-                (s["sha256"] or "")[:16],
-            ]
-        )
-    story.append(_table(rows, [16 * mm, 34 * mm, 16 * mm, 66 * mm, 42 * mm], body))
-    if snapshot["requests"]:
-        story.append(Paragraph("Requests you received", h2))
-        for r in snapshot["requests"]:
-            items = "<br/>".join(f"• {escape(i)}" for i in r["items"])
-            story.append(
-                KeepTogether(
-                    [
-                        Paragraph(
-                            f"<b>Round {r['round']}</b> · {r['state']} · issued {(r['issued_at'] or '')[:16]}",
-                            body,
-                        ),
-                        Paragraph(items, small),
-                        Spacer(1, 4),
-                    ]
-                )
-            )
-    if snapshot["replies"]:
-        story.append(Paragraph("Replies you sent", h2))
-        rows = [["Received", "Content", "Sources"]]
-        for r in snapshot["replies"]:
-            rows.append(
-                [
-                    (r["received_at"] or "")[:16],
-                    Paragraph(escape(r["summary"]), small),
-                    ", ".join(r["sources"]),
-                ]
-            )
-        story.append(_table(rows, [28 * mm, 116 * mm, 30 * mm], body))
-    story.append(Spacer(1, 10))
-    story.append(Paragraph(escape(snapshot["boundary"]), small))
-
-    def footer(canvas, doc_):
-        canvas.saveState()
-        canvas.setFont("Helvetica", 7)
-        canvas.setFillColor(MUTED)
-        canvas.drawString(18 * mm, 9 * mm, f"{export_ref} · revision {c['revision']} · client notice")
         canvas.drawRightString(A4[0] - 18 * mm, 9 * mm, f"Page {doc_.page}")
         canvas.restoreState()
 

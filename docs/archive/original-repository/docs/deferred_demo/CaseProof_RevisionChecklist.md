@@ -1,7 +1,5 @@
 # CaseProof Proposal Revision Checklist (Must-Fix)
 
-> **Historical checklist.** Screenshots and claims for an executive tower, fraud precision, and dual reports are not submission requirements for the shipped app. Use [the current judge path](../../../../JUDGE_SCRIPT.md).
-
 Date: 26 September 2026
 
 Use this checklist to convert the current proposal into a high-scoring final version.

@@ -10,7 +10,7 @@ export interface PolicyRule {
   depends_on_roles: string[];
 }
 
-const CORE = new Set(["invoice_total", "delivery_receipts", "duplicate_invoice"]);
+const CORE = new Set(["invoice_total", "delivery_receipts"]);
 
 export function PolicyRules({
   rules,
@@ -67,7 +67,6 @@ export function PolicyRules({
                   <Input
                     id={`rule-title-${rule.key}`}
                     value={rule.label}
-                    readOnly={rule.key === "duplicate_invoice"}
                     required
                     maxLength={200}
                     placeholder="For example: Payment terms are stated"
@@ -78,17 +77,14 @@ export function PolicyRules({
                   label="Review criteria"
                   htmlFor={`rule-criteria-${rule.key}`}
                   hint={
-                    rule.key === "duplicate_invoice"
-                      ? "This control checks other cases in the book and cannot be changed."
-                      : CORE.has(rule.key)
-                        ? "This check is always required. Any added criteria are also assessed during review."
-                        : "Describe what the document must show to satisfy this requirement."
+                    CORE.has(rule.key)
+                      ? "This check is always required. Any added criteria are also assessed during review."
+                      : "Describe what the document must show to satisfy this requirement."
                   }
                 >
                   <Textarea
                     id={`rule-criteria-${rule.key}`}
                     value={rule.description}
-                    readOnly={rule.key === "duplicate_invoice"}
                     required
                     rows={3}
                     maxLength={2000}

@@ -19,7 +19,6 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { dateTime, relativeTime, sgd, usd } from "@/lib/format";
-import { useSession } from "@/lib/session";
 import { useCaseCommand } from "@/lib/use-case";
 import type { CaseDetail } from "@/lib/types";
 import {
@@ -38,10 +37,7 @@ import { StatusPill } from "@/components/ui/status";
 import { PolicyVersionAction } from "./policy-version";
 
 export function CaseHeader({ detail, onOpenTask }: { detail: CaseDetail; onOpenTask: () => void }) {
-  const session = useSession();
   const c = detail.case;
-  const completedExample =
-    session.showcase?.reading_case_id === c.id ? session.showcase.completed_case_id : null;
   const invoice = detail.questions.find((q) => q.key === "invoice_total")?.metrics as
     Record<string, string> | undefined;
   const current = detail.exports.find((e) => e.is_current && e.state === "ready");
@@ -52,22 +48,12 @@ export function CaseHeader({ detail, onOpenTask }: { detail: CaseDetail; onOpenT
 
   return (
     <header className="space-y-4">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <Link
-          href="/queue"
-          className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted hover:text-teal-700"
-        >
-          <ArrowLeft className="size-4" aria-hidden /> Work queue
-        </Link>
-        {completedExample && (
-          <Link
-            href={`/cases/${completedExample}?panel=summary`}
-            className="text-[13px] font-semibold text-teal-700 hover:text-teal-800"
-          >
-            Client notice
-          </Link>
-        )}
-      </div>
+      <Link
+        href="/queue"
+        className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted hover:text-teal-700"
+      >
+        <ArrowLeft className="size-4" aria-hidden /> Work queue
+      </Link>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

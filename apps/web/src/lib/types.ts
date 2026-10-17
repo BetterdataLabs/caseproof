@@ -13,7 +13,6 @@ export interface SessionInfo {
   environment: string;
   demo_mode: boolean;
   dev_identity: boolean;
-  showcase: { reading_case_id: string | null; completed_case_id: string | null };
   model: { name: string; location: string; provider: string };
   counts: { open_tasks: number };
   automation_enabled: boolean;

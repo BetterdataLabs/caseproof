@@ -2,7 +2,6 @@
 
 import { Building2, CheckCircle2, CircleAlert, FileUp } from "lucide-react";
 import { use, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { ApiError } from "@/lib/api";
 import { relativeTime } from "@/lib/format";
 import { useCaseDetail } from "@/lib/use-case";
@@ -34,15 +33,7 @@ import { TASK_KIND } from "@/components/ui/status";
 export default function CasePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const q = useCaseDetail(id);
-  const search = useSearchParams();
-  const [selection, setSelection] = useState<{ id: string; tab: string } | null>(null);
-  const tab =
-    selection?.id === id
-      ? selection.tab
-      : search.get("panel") === "summary"
-        ? "summary"
-        : "activity";
-  const setTab = (value: string) => setSelection({ id, tab: value });
+  const [tab, setTab] = useState("activity");
   const [source, setSource] = useState<string | null>(null);
   const [simulator, setSimulator] = useState(false);
   const [intake, setIntake] = useState(false);
@@ -96,6 +87,21 @@ export default function CasePage({ params }: { params: Promise<{ id: string }> }
         detail={detail}
         onOpenTask={() => taskRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
       />
+      <VendorContactPanel detail={detail} />
+      {detail.permissions.add_input && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-white px-4 py-3">
+          <p className="text-sm text-muted">
+            Have new evidence or a customer reply? Add it here to continue the review.
+          </p>
+          <Button
+            variant="secondary"
+            icon={<FileUp className="size-4" />}
+            onClick={() => setIntake(true)}
+          >
+            Add documents or reply
+          </Button>
+        </div>
+      )}
       <Dialog
         open={intake}
         onOpenChange={setIntake}
@@ -122,23 +128,6 @@ export default function CasePage({ params }: { params: Promise<{ id: string }> }
 
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-[minmax(0,1fr)_440px]">
         <div className="min-w-0 space-y-6">
-          <Checklist detail={detail} onSource={showSource} />
-          <VendorContactPanel detail={detail} />
-          {detail.permissions.add_input && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-white px-4 py-3">
-              <p className="text-sm text-muted">
-                Have new evidence or a customer reply? Add it here to continue the review.
-              </p>
-              <Button
-                variant="secondary"
-                icon={<FileUp className="size-4" />}
-                onClick={() => setIntake(true)}
-              >
-                Add documents or reply
-              </Button>
-            </div>
-          )}
-
           {openTasks.length > 0 && (
             <div ref={taskRef} className="scroll-mt-6 space-y-4">
               {openTasks.map((t) => (
@@ -146,6 +135,8 @@ export default function CasePage({ params }: { params: Promise<{ id: string }> }
               ))}
             </div>
           )}
+
+          <Checklist detail={detail} onSource={showSource} />
           <DocumentChecksPanel detail={detail} onSource={showSource} />
           <CreditResearchPanel detail={detail} />
 

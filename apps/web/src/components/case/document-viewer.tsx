@@ -42,7 +42,6 @@ const FACT_LABEL: Record<string, string> = {
   basis: "Quantity basis",
   condition: "Condition",
 };
-const LEAD_FACTS = ["total_amount", "quantity", "unit_price", "delivery_ref"];
 const KEY_FACTS = new Set([
   "quantity",
   "unit_price",
@@ -293,27 +292,6 @@ function SourceDetail({
             alt={`Reference template for ${v.role_label}`}
           />
         </div>
-      )}
-
-      {facts.some((f) => f.quote && LEAD_FACTS.includes(f.field)) && (
-        <ul className="mx-4 mt-3 space-y-2" aria-label="Quotes read from this document">
-          {facts
-            .filter((f) => f.quote && LEAD_FACTS.includes(f.field))
-            .slice(0, 3)
-            .map((f, index) => (
-              <li
-                key={`${f.field}-${f.page}-${index}`}
-                className="rounded-lg border border-teal-200 bg-teal-50/70 px-3 py-2"
-              >
-                <p className="text-[12px] font-semibold text-teal-800">
-                  {FACT_LABEL[f.field] ?? humanize(f.field)} · {f.value} · page {f.page}
-                </p>
-                <blockquote className="mt-1 text-[13px] leading-relaxed text-ink">
-                  “{f.quote}”
-                </blockquote>
-              </li>
-            ))}
-        </ul>
       )}
 
       {v.has_preview && (

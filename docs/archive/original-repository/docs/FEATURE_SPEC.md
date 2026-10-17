@@ -1,7 +1,5 @@
 # CaseProof Feature Specification (Design Freeze Candidate)
 
-> **Historical design freeze.** Several Must items here were not built: PO/multi-line alignment (F11–F12), a fraud-signal layer and cross-case duplicate engine (F10), dual internal/client reports (F7), and the executive control tower (E1). The shipped contract is [ARCHITECTURE.md](../../../ARCHITECTURE.md) and the [current judge path](../../../JUDGE_SCRIPT.md).
-
 Date: 26 September 2026
 Updated: 05 October 2026 (alignment pass; F11–F14 + P7 added in Session 013; F7 decision reports in Session 014)
 Status: Frozen v1.1

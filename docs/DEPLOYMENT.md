@@ -1,6 +1,6 @@
 # Google Cloud deployment
 
-This guide deploys CaseProof to Cloud Run with Cloud SQL, Cloud Storage and Cloud Tasks. The public web asks for an access code. The API, worker, database and bucket stay private. Run the steps in order from the repository root using Bash. For local startup, use the [README](../README.md#run-locally).
+This guide deploys CaseProof to Cloud Run with Cloud SQL, Cloud Storage and Cloud Tasks. The public web uses an access-code gate; the API and worker stay private. Run the steps in order from the repository root using Bash. For local startup, use the [README](../README.md#run-locally).
 
 The local app and container builds have been verified. A hosted end-to-end deployment has not yet been verified; complete step 8 before sharing a hosted demo.
 
@@ -8,7 +8,7 @@ The local app and container builds have been verified. A hosted end-to-end deplo
 
 | Component               | Deployment                                                           |
 | ----------------------- | -------------------------------------------------------------------- |
-| Web                     | Next.js container on Cloud Run, public, gated by an access code      |
+| Web                     | Next.js container on Cloud Run, gated by an access code                     |
 | API                     | Private Cloud Run service using the backend image with `ROLE=api`    |
 | Worker                  | Private Cloud Run service using the backend image with `ROLE=worker` |
 | Database                | Cloud SQL for PostgreSQL 17                                          |
@@ -17,13 +17,13 @@ The local app and container builds have been verified. A hosted end-to-end deplo
 | Reconciliation          | Cloud Scheduler invokes `POST /jobs/reconcile` every minute          |
 | Migration and seed      | One-off Cloud Run jobs using the backend image                       |
 
-Cloud Tasks and scheduled reconciliation replace the local dispatcher process. The web authenticates to the private API with its own service identity and forwards the browser's cookies. Judges do not need Google accounts.
+Cloud Tasks and scheduled reconciliation replace the local dispatcher process. The web forwards browser cookies to the private API and authenticates to Cloud Run with its own service identity. Judges do not need Google accounts.
 
 ## 1. Prepare the project
 
 Install an up-to-date [Google Cloud CLI](https://cloud.google.com/sdk/docs/install), Docker with Buildx, Python 3 and the PostgreSQL `psql` client. Use a billing-enabled Google Cloud project. The operator needs permission to create the listed resources, manage IAM, enable services, access secrets and act as the deployment service accounts. Confirm Vertex AI access to the configured Gemini model.
 
-Set your deployment values. Keep this shell open for the remaining steps. Replace the project ID. Do not put the access code in this shell's history or in the repository.
+Set your deployment values. Keep this shell open for the remaining steps. Replace the project ID. The access code is entered privately in step 3.
 
 ```bash
 export PROJECT_ID="YOUR_PROJECT_ID"
@@ -190,9 +190,6 @@ gcloud secrets add-iam-policy-binding caseproof-session-secret \
 gcloud secrets add-iam-policy-binding caseproof-demo-access-code \
   --member="serviceAccount:caseproof-api@${PROJECT_ID}.iam.gserviceaccount.com" \
   --role=roles/secretmanager.secretAccessor
-gcloud storage buckets add-iam-policy-binding "gs://${BUCKET}" \
-  --member="serviceAccount:caseproof-migrate@${PROJECT_ID}.iam.gserviceaccount.com" \
-  --role=roles/storage.objectUser
 
 for role in roles/aiplatform.user roles/serviceusage.serviceUsageConsumer; do
   gcloud projects add-iam-policy-binding "$PROJECT_ID" \
@@ -201,7 +198,7 @@ for role in roles/aiplatform.user roles/serviceusage.serviceUsageConsumer; do
 done
 ```
 
-Create the Google-managed service identities used for delivery and sign-in, and ensure the task and scheduler service agents retain their service-agent roles:
+Create the Google-managed service identities used for delivery, and ensure the task and scheduler service agents retain their service-agent roles:
 
 ```bash
 for service in cloudtasks.googleapis.com cloudscheduler.googleapis.com; do
@@ -248,20 +245,17 @@ gcloud run jobs deploy caseproof-migrate \
   --execute-now --wait
 ```
 
-Create an environment file for the seed job. A file preserves the commas inside each user's role list:
+Create an environment file for the seed job. This creates the existing Alex, Sam and Aisha memberships:
 
 ```bash
 python3 - <<'PY'
 import json
-import os
 from pathlib import Path
 
 Path(".data/deploy/seed.json").write_text(json.dumps({
     "ROLE": "seed",
     "CASEPROOF_ENVIRONMENT": "cloud",
     "CASEPROOF_DEV_IDENTITY": "false",
-    "CASEPROOF_STORAGE_BACKEND": "gcs",
-    "CASEPROOF_GCS_BUCKET": os.environ["BUCKET"],
     "SEED_ARGS": "",
 }, indent=2))
 PY
@@ -276,7 +270,7 @@ gcloud run jobs deploy caseproof-seed \
   --execute-now --wait
 ```
 
-Seed also leaves two Straits cases that do not wait on Vertex: an open case whose quote and checklist are already on screen, and a completed case whose client notice is one click away. Re-running the seed adds missing accounts and does not create a second copy of those cases. It does not change roles on existing memberships. The access code is not part of this job.
+Seeding adds missing identities and policy; it preserves existing cases and memberships. The three visible accounts are Alex, Sam and Aisha. The access code is configured on the API, independently of seeding.
 
 ## 6. Deploy the worker and API
 
@@ -420,9 +414,9 @@ gcloud run services describe caseproof-web \
 
 Complete these checks before sharing that URL:
 
-1. Enter the access code. The next screen is an open case with a quote, a page, and the checklist. **Client notice** opens the completed case, with the client PDF on the review summary.
-2. Use **Switch persona** and open Sam Lim. The completed submission's client notice is on that page. Return to Alex Chen.
-3. As Sam, submit the [sample invoice and receipt](../apps/web/public/sample-documents/caseproof-upload-example.zip). Confirm processing starts. The seeded client notice stays available if that live correction is still running.
+1. Enter the configured access code. Alex opens the bank queue. Use **Switch persona** to select Sam or Aisha and verify the vendor and read-only workspaces.
+2. As the vendor, submit the [sample invoice and receipt](../apps/web/public/sample-documents/caseproof-upload-example.zip). Confirm processing starts and a missing-evidence request appears.
+3. Upload the corrected invoice and remaining receipt. As the reviewer, inspect the completed checklist and download PDF and JSON summaries.
 4. Confirm original documents remain downloadable after a service revision or restart.
 5. Inspect **Operations**, the Cloud Tasks queue and Scheduler execution logs for successful delivery and reconciliation.
 6. Use the [demo verification guide](TESTING.md) to check policy changes, decisions, document checks and optional research.
